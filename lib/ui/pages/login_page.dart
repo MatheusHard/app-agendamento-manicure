@@ -1,3 +1,4 @@
+import 'package:app_agendamento_manicure/ui/api/loginapi.dart';
 import 'package:app_agendamento_manicure/ui/pages/utils/core/app_gradients.dart';
 import 'package:app_agendamento_manicure/ui/pages/utils/core/app_text_styles.dart';
 import 'package:app_agendamento_manicure/ui/pages/utils/metods/utils.dart';
@@ -22,14 +23,12 @@ class _LoginPageState extends State<LoginPage> {
   bool obscured = true;
   final _isLoading = ValueNotifier<bool>(false);
 
-
   @override
   void initState (){
-
     _myFocusNode = FocusNode();
-
     super.initState();
   }
+
   @override
   Widget build(BuildContext context) {
 
@@ -266,7 +265,7 @@ class _LoginPageState extends State<LoginPage> {
   }
   ///Loading Icon and Text:
   void _logar() async {
-   // _isLoading.value = await UsuarioApi(context).loginUsuario(_login(_email, Utils.toSha1(_senha)));
+   _isLoading.value = await LoginApi(context).getToken(_email, _senha);
   }
 
   _sizedBox(double height){
