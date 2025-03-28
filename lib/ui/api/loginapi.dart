@@ -4,6 +4,7 @@ import 'package:app_agendamento_manicure/ui/models/Login.dart';
 import 'package:app_agendamento_manicure/ui/pages/home_page.dart';
 import 'package:flutter/material.dart';
 
+import '../pages/screen_arguments/ScreenArgumentsUser.dart';
 import '../pages/utils/metods/utils.dart';
 
 class LoginApi implements ILoginApi{
@@ -30,9 +31,7 @@ class LoginApi implements ILoginApi{
         Login login =  Login.fromJson(response.data);
         if(login.token != null){
           flag = true;
-          Navigator.push(
-              _context!,
-              MaterialPageRoute(builder: (context) => HomePage()));
+          Navigator.pushNamed(_context!, '/home_page', arguments: ScreenArgumentsUser(login));
         }
       }
     }catch(error){

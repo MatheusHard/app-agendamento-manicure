@@ -34,7 +34,7 @@ class _LoginPageState extends State<LoginPage> {
 
     ///Mudar cor do CheckBOx:
     Color getColor(Set<WidgetState> states) {
-      const Set<WidgetState> interactiveStates = <MaterialState>{
+      const Set<WidgetState> interactiveStates = <WidgetState>{
         WidgetState.pressed,
         WidgetState.hovered,
         WidgetState.focused,
