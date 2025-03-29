@@ -1,12 +1,17 @@
+import 'package:app_agendamento_manicure/ui/api/agendamentoapi.dart';
 import 'package:app_agendamento_manicure/ui/enums/drawer_sections.dart';
+import 'package:app_agendamento_manicure/ui/models/agendamento.dart';
+import 'package:app_agendamento_manicure/ui/models/cliente.dart';
 import 'package:app_agendamento_manicure/ui/pages/screen_arguments/ScreenArgumentsUser.dart';
 import 'package:app_agendamento_manicure/ui/pages/utils/core/app_colors.dart';
 import 'package:app_agendamento_manicure/ui/pages/utils/core/app_gradients.dart';
 import 'package:app_agendamento_manicure/ui/pages/utils/core/app_text_styles.dart';
+import 'package:app_agendamento_manicure/ui/pages/utils/metods/utils.dart';
+import 'package:app_agendamento_manicure/ui/pages/widgets/card_agendamento.dart';
 import 'package:app_agendamento_manicure/ui/pages/widgets/drawer/header_drawer.dart';
 import 'package:flutter/material.dart';
 
-import '../models/Login.dart';
+import '../models/user.dart';
 
 class HomePage extends StatefulWidget {
   const HomePage({super.key});
@@ -20,8 +25,23 @@ class _HomePageState extends State<HomePage> {
   final GlobalKey<ScaffoldState> key = GlobalKey(); // Create a key
   final int _currentIndex = 0;
   var currentPage = DrawerSections.dashboard;
+  List<Agendamento> listaAgendamentos = [];
+  bool isLoading = true;
+
+  @override
+  void initState() {
+
+    carregarAgendamentos();
+
+    super.initState();
+  }
+
   @override
   Widget build(BuildContext context) {
+
+    if (listaAgendamentos.isEmpty) {
+      return const Center(child: Text('Nenhum agendamento encontrado.'));
+    }
 
     var width = MediaQuery.of(context).size.width;
     var height = MediaQuery.of(context).size.height;
@@ -34,7 +54,6 @@ class _HomePageState extends State<HomePage> {
           _dialogSair();
         }
       },
-
       child: Scaffold(
         key: key,
         appBar: _appBar(width, userLogado),
@@ -49,6 +68,27 @@ class _HomePageState extends State<HomePage> {
                 ],
               ),
             )
+        ),
+        body: Container(
+          padding: EdgeInsets.all(8),
+          child:  isLoading ? Center(child: CircularProgressIndicator()) : ListView.builder(
+            padding: const EdgeInsets.all(8),
+            itemCount: listaAgendamentos.length,
+            itemBuilder: (BuildContext context, int index) {
+              final Agendamento agendamento = listaAgendamentos[index];
+
+              return CardAgendamento(
+                title: agendamento.cliente?.name ?? "Sem nome",
+                subtitle: agendamento.createdAt ?? "Sem data",
+                icon: agendamento.finalizado == true
+                    ? Icons.check_circle
+                    : Icons.schedule,
+                onTap: () {
+                  print(agendamento.cliente?.name ?? "");
+                },
+              );
+            },
+          )
         ),
      ),);
 
@@ -146,7 +186,7 @@ class _HomePageState extends State<HomePage> {
     );
   }
   final tabs = [
-    Container(),
+    Container(child: Text("HOme"),),
     Padding( padding: const EdgeInsets.only( left:8.0, right: 8.0), child: Container(  color:
     AppColors.levelButtonTextFacil,)),
     Container()
@@ -192,7 +232,6 @@ class _HomePageState extends State<HomePage> {
                   _dialogSair();
                   break;
               }
-
             });
           },
           child: Padding(
@@ -207,4 +246,20 @@ class _HomePageState extends State<HomePage> {
         )
     );
   }
+
+  Future<void> carregarAgendamentos() async {
+    try {
+      final dados = await AgendamentoApi(context).getList(1, 1, true);
+      setState(() {
+        listaAgendamentos = dados;
+        isLoading = false;
+      });
+    } catch (e) {
+      // Lida com erro, se quiser
+      setState(() {
+        isLoading = false;
+      });
+    }
+  }
+
 }

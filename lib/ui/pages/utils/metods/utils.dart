@@ -6,6 +6,7 @@ import 'dart:typed_data';
 
 import 'package:flutter/material.dart';
 import 'package:flutter/widgets.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 
 
@@ -173,6 +174,17 @@ import 'package:flutter/widgets.dart';
       return value.toString();
 
     }*/
+  ///Token
+  static Future<void> salvarToken(String token) async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setString('token', token);
+  }
+
+  static Future<String?> recuperarToken() async {
+    final prefs = await SharedPreferences.getInstance();
+    return prefs.getString('token');
+  }
+
    static Future<bool> isConnected() async {
 
     bool flag = false;

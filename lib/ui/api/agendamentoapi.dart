@@ -1,0 +1,65 @@
+import 'package:app_agendamento_manicure/ui/api/configurations/dio/configs.dart';
+import 'package:app_agendamento_manicure/ui/models/agendamento.dart';
+import 'package:app_agendamento_manicure/ui/pages/utils/metods/utils.dart';
+import 'package:dio/dio.dart';
+import 'package:flutter/material.dart';
+
+import 'interfaces/iagendamentoapi.dart';
+
+class AgendamentoApi implements IAgendamentoApi {
+
+  BuildContext? _context;
+  Configs _customDio = Configs();
+  final URL = "/agendamentos";
+
+
+  AgendamentoApi(BuildContext context) {
+    _context = context;
+  }
+
+  @override
+  Future<bool> addAgendamento(Agendamento a) async {
+
+    var token = await Utils.recuperarToken(); // Pegue do localStorage, SharedPreferences, etc.
+
+    var response = await _customDio.dio.post(URL,
+                                              data: {'createdAt':   a.createdAt,
+                                                      'updatedAt':  a.updatedAt,
+                                                      'finalizado': a.finalizado,
+                                                      'observacao': a.observacao,
+                                                      'user': {
+                                                        'id': a.user?.id
+                                                      },
+                                                      'cliente': {
+                                                        'id': a.cliente?.id
+                                                      }
+                                                  },
+                                                options: Options(
+                                                headers: {
+                                                'Authorization': 'Bearer $token',
+                                                },),
+                                );
+    return true;
+  }
+
+  @override
+  Future<List<Agendamento>> getList(int user_id, int cliente_id, bool finalizado) async {
+
+    var token = await Utils.recuperarToken(); // Pegue do localStorage, SharedPreferences, etc.
+    var response = await _customDio.dio.get(URL,  options: Options(
+                                                            headers: {
+                                                              'Authorization': 'Bearer $token',
+                                                            },),);
+    if (response.statusCode == 200) {
+      var lista = response.data;
+      // Aqui você pode fazer o mapeamento de lista para objetos Agendamento
+      List<Agendamento> agendamentos = (lista as List)
+          .map((json) => Agendamento.fromJson(json))
+          .toList();
+
+      return agendamentos;
+    }
+
+    return [];
+  }
+}

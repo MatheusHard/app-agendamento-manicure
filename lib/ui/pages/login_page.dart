@@ -265,7 +265,7 @@ class _LoginPageState extends State<LoginPage> {
   }
   ///Loading Icon and Text:
   void _logar() async {
-   _isLoading.value = await LoginApi(context).getToken(_email, _senha);
+   _isLoading.value = await LoginApi(context).login(_email, _senha);
   }
 
   _sizedBox(double height){
