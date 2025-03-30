@@ -3,7 +3,7 @@ import 'package:app_agendamento_manicure/ui/api/interfaces/iloginapi.dart';
 import 'package:app_agendamento_manicure/ui/models/login.dart';
 import 'package:app_agendamento_manicure/ui/models/user.dart';
 import 'package:flutter/material.dart';
-
+import '../pages/home_page.dart';
 import '../pages/screen_arguments/ScreenArgumentsUser.dart';
 import '../pages/utils/metods/utils.dart';
 
@@ -41,7 +41,11 @@ class LoginApi implements ILoginApi{
             await Utils.removerUser();
           }
           flag = true;
-          Navigator.pushNamed(_context!, '/home_page', arguments: ScreenArgumentsUser(login));
+          Navigator.push(
+                        _context!,
+                        MaterialPageRoute(builder: (context) => HomePage(ScreenArgumentsUser(login)))
+          );
+
         }
       }
     }catch(error){

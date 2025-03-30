@@ -1,135 +1,82 @@
-import 'package:app_agendamento_manicure/ui/api/agendamentoapi.dart';
-import 'package:app_agendamento_manicure/ui/api/clienteapi.dart';
-import 'package:app_agendamento_manicure/ui/enums/drawer_sections.dart';
-import 'package:app_agendamento_manicure/ui/models/agendamento.dart';
+import 'package:app_agendamento_manicure/ui/models/cliente.dart';
 import 'package:app_agendamento_manicure/ui/pages/screen_arguments/ScreenArgumentsUser.dart';
-import 'package:app_agendamento_manicure/ui/pages/utils/core/app_colors.dart';
 import 'package:app_agendamento_manicure/ui/pages/utils/core/app_gradients.dart';
 import 'package:app_agendamento_manicure/ui/pages/utils/core/app_text_styles.dart';
-import 'package:app_agendamento_manicure/ui/pages/widgets/card_agendamento.dart';
+import 'package:app_agendamento_manicure/ui/pages/widgets/card_cliente.dart';
 import 'package:app_agendamento_manicure/ui/pages/widgets/drawer/header_drawer.dart';
 import 'package:flutter/material.dart';
 
-import 'cliente_page.dart';
+import '../api/clienteapi.dart';
+import '../enums/drawer_sections.dart';
+import 'home_page.dart';
 
-class HomePage extends StatefulWidget {
-
+class ClientePage extends StatefulWidget {
   final ScreenArgumentsUser? userLogado;
 
-  const HomePage(this.userLogado, {super.key});
+  const ClientePage(this.userLogado, {super.key});
 
   @override
-  State<HomePage> createState() => _HomePageState();
+  State<ClientePage> createState() => _ClientePageState();
 }
 
-class _HomePageState extends State<HomePage> {
+class _ClientePageState extends State<ClientePage> {
 
-  final GlobalKey<ScaffoldState> key = GlobalKey(); // Create a key
-  final int _currentIndex = 0;
-  var currentPage = DrawerSections.dashboard;
-  List<Agendamento> listaAgendamentos = [];
-  bool isLoading = true;
   ScreenArgumentsUser? userLogado;
+  final GlobalKey<ScaffoldState> key = GlobalKey(); // Create a key
+  var currentPage = DrawerSections.cliente;
+  bool isLoading = true;
+  List<Cliente> listaClientes = [];
 
   @override
   void initState() {
-
     userLogado = widget.userLogado;
-    carregarAgendamentos();
-    testeAdd();
+    carregarClientes();
     super.initState();
-  }
-
-  // TODO
-  testeAdd() async {
-  /*  Cliente c = Cliente();
-    c.telephone = "83 999888";
-    c.cpf = "05697455521";
-    c.email = "chocho@gmail.com";
-    c.updatedAt = "2025-03-30T09:33:17.693631";
-    c.createdAt =  "2025-03-30T09:33:17.693631";
-    c.name = "Pit Bitoca";
-    ClienteApi(context).addCliente(c, 1);
-    */
-    var lista = await ClienteApi(context).getList(1, 1);
-  print(lista);
   }
   @override
   Widget build(BuildContext context) {
 
     var width = MediaQuery.of(context).size.width;
     var height = MediaQuery.of(context).size.height;
-    //ScreenArgumentsUser? userLogado = ModalRoute.of(context)?.settings.arguments as ScreenArgumentsUser?;
 
-    return PopScope(
-      canPop: false, // 👈 Impede o pop automático (se você quiser controlar manualmente)
-      onPopInvoked: (didPop) async {
-        if (!didPop) {
-          _dialogSair();
-        }
-      },
-      child: Scaffold(
-        key: key,
-        appBar: _appBar(width, userLogado),
-        drawer:  Drawer(
-            child: SingleChildScrollView(
-              child: Column(
-                children: [
-                  ///Header Drawer
-                  MeuHeadDrawer(userLogado),
-                  ///Body Drawer
-                  _meuDrawerList(userLogado),
-                ],
-              ),
-            )
-        ),
-        body: Container(
-          padding: EdgeInsets.all(8),
-          child:  isLoading ? Center(child: CircularProgressIndicator()) : ListView.builder(
-            padding: const EdgeInsets.all(8),
-            itemCount: listaAgendamentos.length,
-            itemBuilder: (BuildContext context, int index) {
-              final Agendamento agendamento = listaAgendamentos[index];
-
-              return CardAgendamento(
-                title: agendamento.cliente?.name ?? "Sem nome",
-                subtitle: agendamento.createdAt ?? "Sem data",
-                icon: agendamento.finalizado == true
-                    ? Icons.check_circle
-                    : Icons.schedule,
-                onTap: () {
-                  print(agendamento.cliente?.name ?? "");
-                },
-              );
-            },
-          )
-        ),
-     ),);
-
-  }
-
-  _dialogSair() async {
-
-          return await showDialog<void>(
-            context: context,
-            builder: (context) => AlertDialog(
-              title: const Text('Tem certeza?'),
-              content: const Text('Você quer sair da tela?'),
-              actions: [
-                TextButton(
-                  onPressed: () => Navigator.of(context).pop(false),
-                  child: const Text('Cancelar'),
-                ),
-                TextButton(
-                  onPressed: () =>  Navigator.pushNamed(
-                      context, '/login_page', arguments: null),
-                  child: const Text('Sim'),
-                ),
+    return Scaffold(
+      key: key,
+      ///AppBar
+      appBar: _appBar(width, userLogado),
+      ///Drawer
+      drawer:  Drawer(
+          child: SingleChildScrollView(
+            child: Column(
+              children: [
+                ///Header Drawer
+                MeuHeadDrawer(userLogado),
+                ///Body Drawer
+                _meuDrawerList(userLogado),
               ],
             ),
-          );
-    }
+          )
+      ),
+      ///Body
+      body: Container(
+          padding: EdgeInsets.all(8),
+        child: isLoading ? Center(child: CircularProgressIndicator()): ListView.builder(
+          padding: const EdgeInsets.all(8),
+          itemCount: listaClientes.length,
+          itemBuilder: (BuildContext context, int index){
+            final Cliente cliente = listaClientes[index];
 
+            return CardCliente(
+              onTap: (){
+                print("clicou cliente");
+              },
+                title: cliente.name ?? "",
+                subtitle: cliente.telephone ?? "",
+                icon: Icons.phone_forwarded);
+          },
+        ),
+      ),
+    );
+  }
   ///App Bar
   _appBar(double width, ScreenArgumentsUser? usuarioLogado){
 
@@ -199,15 +146,20 @@ class _HomePageState extends State<HomePage> {
       width: width,
     );
   }
-  final tabs = [
-    Container(child: Text("HOme"),),
-    Padding( padding: const EdgeInsets.only( left:8.0, right: 8.0), child: Container(  color:
-    AppColors.levelButtonTextFacil,)),
-    Container()
-  ];
 
-  getBody() {
-    return (_currentIndex == 0) ? HomePage(userLogado) : Container();
+  Future<void> carregarClientes() async {
+    try {
+      final dados = await ClienteApi(context).getList(1, 1);
+      setState(() {
+        listaClientes = dados;
+        isLoading = false;
+      });
+    } catch (e) {
+      // Lida com erro, se quiser
+      setState(() {
+        isLoading = false;
+      });
+    }
   }
   ///MenuDrawer:
   _meuDrawerList(ScreenArgumentsUser? usuario){
@@ -235,21 +187,25 @@ class _HomePageState extends State<HomePage> {
               switch(id){
                 case 0:
                   currentPage = DrawerSections.dashboard;
+                  Navigator.push(
+                      context,
+                      MaterialPageRoute(builder: (context) => HomePage(usuario)));
                   break;
                 case 1:
+                  currentPage = DrawerSections.cliente;
                   Navigator.push(
                       context,
                       MaterialPageRoute(builder: (context) => ClientePage(usuario)));
                   break;
                 case 2:
                   currentPage = DrawerSections.perfil;
-                 /* Navigator.push(
+                  /* Navigator.push(
                       context,
                       MaterialPageRoute(builder: (context) => PerfilPage(usuario)));*/
                   break;
                 case 3:
                   currentPage = DrawerSections.exit;
-                  _dialogSair();
+                  //_dialogSair();
                   break;
               }
             });
@@ -265,21 +221,6 @@ class _HomePageState extends State<HomePage> {
 
         )
     );
-  }
-
-  Future<void> carregarAgendamentos() async {
-    try {
-      final dados = await AgendamentoApi(context).getList(1, 1, true);
-      setState(() {
-        listaAgendamentos = dados;
-        isLoading = false;
-      });
-    } catch (e) {
-      // Lida com erro, se quiser
-      setState(() {
-        isLoading = false;
-      });
-    }
   }
 
 }
