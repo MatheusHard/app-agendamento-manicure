@@ -40,8 +40,6 @@ class ClienteApi implements IClienteApi {
         },),
     );
 
-    if(response.status == 200 || response.status == 201) Utils.showDefaultSnackbar(_context!, "Cliente cadastrado com sucesso!!!");
-
     return true;
   }
 
