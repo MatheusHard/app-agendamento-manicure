@@ -30,18 +30,12 @@ class _HomePageState extends State<HomePage> {
 
   @override
   void initState() {
-
     carregarAgendamentos();
-
     super.initState();
   }
 
   @override
   Widget build(BuildContext context) {
-
-    if (listaAgendamentos.isEmpty) {
-      return const Center(child: Text('Nenhum agendamento encontrado.'));
-    }
 
     var width = MediaQuery.of(context).size.width;
     var height = MediaQuery.of(context).size.height;
@@ -160,7 +154,7 @@ class _HomePageState extends State<HomePage> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text('''Olá ${usuarioLogado?.data.user.username}''' , style: AppTextStyles.titleAppBarUsuario(25, context),),
+                  Expanded(child: Text('''Olá ${usuarioLogado?.data.user.username}''' , style: AppTextStyles.titleAppBarUsuario(25, context),)),
                 ],),
             )
           ],

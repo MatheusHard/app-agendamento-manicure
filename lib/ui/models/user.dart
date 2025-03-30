@@ -18,13 +18,13 @@ class User {
         this.roles});
 
   User.fromJson(Map<String, dynamic> json) {
-    id = json['id'];
-    createdAt = json['createdAt'];
-    updatedAt = json['updatedAt'];
-    username = json['username'];
-    email = json['email'];
-    password = json['password'];
-    roles = json['roles'].cast<String>();
+    id = json['id'] ?? 0;
+    createdAt = json['createdAt'] ?? "";
+    updatedAt = json['updatedAt'] ?? "";
+    username = json['username'] ?? "";
+    email = json['email'] ?? "";
+    password = json['password'] ?? "";
+    roles = json['roles'] != null ? List<String>.from(json['roles']) : [];
   }
 
   Map<String, dynamic> toJson() {

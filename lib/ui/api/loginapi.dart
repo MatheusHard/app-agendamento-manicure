@@ -1,6 +1,7 @@
 import 'package:app_agendamento_manicure/ui/api/configurations/dio/configs.dart';
 import 'package:app_agendamento_manicure/ui/api/interfaces/iloginapi.dart';
 import 'package:app_agendamento_manicure/ui/models/login.dart';
+import 'package:app_agendamento_manicure/ui/models/user.dart';
 import 'package:flutter/material.dart';
 
 import '../pages/screen_arguments/ScreenArgumentsUser.dart';
@@ -15,7 +16,7 @@ class LoginApi implements ILoginApi{
   }
 
   @override
-  Future<bool> login(String username, String password) async {
+  Future<bool> login(String username, String password, bool isChecked) async {
 
     bool flag = false;
     var customDio = Configs();
@@ -30,6 +31,15 @@ class LoginApi implements ILoginApi{
         Login login =  Login.fromJson(response.data);
         if(login.token != null){
           await Utils.salvarToken(login.token ?? "");
+          ///Caso queira salvar a sessão:
+          if(isChecked){
+            login.user?.username = username;
+            login.user?.password = password;
+            await Utils.salvarUser(login.user as User);
+            await Utils.salvarManterConectado(isChecked);
+          }else{
+            await Utils.removerUser();
+          }
           flag = true;
           Navigator.pushNamed(_context!, '/home_page', arguments: ScreenArgumentsUser(login));
         }
@@ -38,7 +48,6 @@ class LoginApi implements ILoginApi{
       Utils.showDefaultSnackbar(_context!, '''Verifique suas credenciais!!!''');
       flag = false;
     }
-
     return flag;
   }
 

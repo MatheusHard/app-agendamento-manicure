@@ -2,16 +2,16 @@
 import 'dart:convert';
 import 'dart:io';
 import 'dart:typed_data';
-
-
+import 'package:app_agendamento_manicure/ui/models/user.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/widgets.dart';
+import 'package:intl/date_symbol_data_file.dart';
+import 'package:intl/intl.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-
-
 
   class Utils {
 
+  static const String _boolKey = 'isLoggedIn';
   ///Servidor
   static String URL_WEB_SERVICE = "http://192.99.158.20:80/api/";
   ///Local
@@ -122,19 +122,6 @@ import 'package:shared_preferences/shared_preferences.dart';
     ];
 
   }
-  /*static saveSession(String key, value) async {
-    final prefs = await SharedPreferences.getInstance();
-    prefs.setString(key, json.encode(value));
-  }
-  static readSession(String? key) async {
-    var prefs = await SharedPreferences.getInstance();
-    var chave = prefs.getString(key!);
-    return json.decode(chave!);
-  }
-  static removeSession(String key) async {
-    final prefs = await SharedPreferences.getInstance();
-    prefs.remove(key);
-  }*/
 
   static bool invalidEmail(String? value) {
     String pattern =
@@ -184,6 +171,38 @@ import 'package:shared_preferences/shared_preferences.dart';
     final prefs = await SharedPreferences.getInstance();
     return prefs.getString('token');
   }
+  ///Salvar User
+  static Future<void> salvarUser(User user) async {
+    final prefs = await SharedPreferences.getInstance();
+    String userJson = jsonEncode(user.toJson());
+    await prefs.setString('user', userJson);
+  }
+  //Salvar manter Conectado
+  static Future<void> salvarManterConectado(bool valor) async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setBool(_boolKey, valor);
+  }
+
+  //Ler manter Conectado
+  static Future<bool> recuperarManterConectado() async {
+    final prefs = await SharedPreferences.getInstance();
+    return prefs.getBool(_boolKey) ?? false; // false como default
+  }
+  ///Recuperar User
+  static Future<User?> recuperarUser() async {
+    final prefs = await SharedPreferences.getInstance();
+    String? userJson = prefs.getString('user');
+
+    if (userJson != null) {
+      Map<String, dynamic> userMap = jsonDecode(userJson);
+      return User.fromJson(userMap);
+    }
+    return null;
+  }
+  static Future<void> removerUser() async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.remove('user');
+  }
 
    static Future<bool> isConnected() async {
 
@@ -212,7 +231,7 @@ import 'package:shared_preferences/shared_preferences.dart';
     }*/
     /***************DataHora***************/
 
- /* static DateTime getDataHora(){
+  static DateTime getDataHora(){
   return DateTime.now();
   }
   static String getDataHoraDotNet(){
@@ -224,19 +243,20 @@ import 'package:shared_preferences/shared_preferences.dart';
     return DateTime.tryParse(dataHora);
   }
   static String formatarData(String data, bool small){
-    var formater;
 
-    initializeDateFormatting("pt_BR");
-    if(small){
-      formater = DateFormat("dd/MM/y");
-    }else{
-      formater = DateFormat("dd/MM/y H:m");
-    }
-    DateTime dataConvertida =  DateTime.parse(data);
-    String date = formater.format(dataConvertida);
+    final DateTime dt = DateTime.parse(data);
 
-    return date;
-  }*/
+    final String dia = dt.day.toString().padLeft(2, '0');
+    final String mes = dt.month.toString().padLeft(2, '0');
+    final String ano = dt.year.toString();
+    final String hora = dt.hour.toString().padLeft(2, '0');
+    final String minuto = dt.minute.toString().padLeft(2, '0');
+
+    return small
+        ? "$dia/$mes/$ano"
+        : "$dia/$mes/$ano $hora:$minuto";
+
+  }
   /**************Mostrar Texto**************/
   static void showDefaultSnackbar(BuildContext context, String texto){
   //Scaffold.of(context).showSnackBar(

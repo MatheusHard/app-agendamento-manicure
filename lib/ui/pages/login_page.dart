@@ -4,6 +4,8 @@ import 'package:app_agendamento_manicure/ui/pages/utils/core/app_text_styles.dar
 import 'package:app_agendamento_manicure/ui/pages/utils/metods/utils.dart';
 import 'package:flutter/material.dart';
 
+import '../models/user.dart';
+
 
 class LoginPage extends StatefulWidget {
   static String tag = 'login_page';
@@ -19,14 +21,35 @@ class _LoginPageState extends State<LoginPage> {
   final GlobalKey<FormState> _formKey = GlobalKey<FormState>();
   late FocusNode _myFocusNode;
   final textFieldFocusNode = FocusNode();
+  TextEditingController _controllerEmail = TextEditingController();
+  TextEditingController _controllerPassword = TextEditingController();
 
   bool obscured = true;
   final _isLoading = ValueNotifier<bool>(false);
 
   @override
   void initState (){
+    carregarUser();
     _myFocusNode = FocusNode();
     super.initState();
+  }
+
+  carregarUser() async {
+    User? user = await Utils.recuperarUser();
+    if(user != null){
+      _email = user.username ?? ""; // agora ok
+      _senha = user.password ?? "";
+      _controllerEmail.text = _email;
+      _controllerPassword.text = _senha;
+    }
+    _loadConectado();
+  }
+  ///Exibir, caso manter conectado ja tenha sido marcado:
+  Future<void> _loadConectado() async {
+    isChecked = await Utils.recuperarManterConectado();
+    setState(() {
+      isChecked;
+    });
   }
 
   @override
@@ -45,10 +68,8 @@ class _LoginPageState extends State<LoginPage> {
       return Colors.red;
     }
 
-
     var width = MediaQuery.of(context).size.width;
     var height = MediaQuery.of(context).size.height;
-
 
     final logo = Hero(
         tag: 'hero',
@@ -77,6 +98,7 @@ class _LoginPageState extends State<LoginPage> {
         ));
 
     final email = TextFormField(
+      controller: _controllerEmail,
       keyboardType: TextInputType.emailAddress,
       autofocus: false,
       onChanged: (value) {
@@ -104,6 +126,7 @@ class _LoginPageState extends State<LoginPage> {
 
     final senha = TextFormField(
       autofocus: false,
+      controller: _controllerPassword,
       obscureText: obscured,
       focusNode: textFieldFocusNode,
       keyboardType: TextInputType.visiblePassword,
@@ -145,14 +168,11 @@ class _LoginPageState extends State<LoginPage> {
     final botao = GestureDetector(
 
       onTap: ()  {
-        if(isChecked){
           if(_formKey.currentState!.validate()) {
             _isLoading.value = !_isLoading.value;
             _logar();
           }
-        }else if(mounted){
-          ///Utils.showDefaultSnackbar(context, "Aceite os termos!!!");
-        }
+
       },
       child:   Container(
 
@@ -198,9 +218,8 @@ class _LoginPageState extends State<LoginPage> {
       ),
     );
 
-    final termosConsentimento = Row(
-
-      mainAxisAlignment: MainAxisAlignment.center,
+    final manterConectado = Row(
+        mainAxisAlignment: MainAxisAlignment.center,
       children: [
         Checkbox(
           checkColor: Colors.white,
@@ -214,22 +233,14 @@ class _LoginPageState extends State<LoginPage> {
         ),
 
         TextButton(
-
           child: const Text(
-
-            'Aceite os Termos',
-
+            'Manter Conectado',
             style: TextStyle(color: Colors.blue, fontSize: 16),
-
           ),
-
           onPressed: () {
-            _dialogAceiteosTermos(context);
-
           },
         )
-      ],
-    );
+      ],);
 
     return Scaffold(
         key: _scaffoldKey,
@@ -248,7 +259,7 @@ class _LoginPageState extends State<LoginPage> {
                 senha,
                 _sizedBox(24.0),
                 botao,
-                termosConsentimento,
+                manterConectado,
               ],
             ),
           ),
@@ -265,7 +276,7 @@ class _LoginPageState extends State<LoginPage> {
   }
   ///Loading Icon and Text:
   void _logar() async {
-   _isLoading.value = await LoginApi(context).login(_email, _senha);
+   _isLoading.value = await LoginApi(context).login(_email, _senha, isChecked);
   }
 
   _sizedBox(double height){
@@ -273,17 +284,8 @@ class _LoginPageState extends State<LoginPage> {
       height: height,
     );
   }
-  _login(String email, String senha){
 
-    return {
-      "email": email,
-      "senha": senha,
-      //"tipoUsuario": TipoUsuario.Aluno.index,
-
-    };
-  }
-
-  Future<void> _dialogAceiteosTermos(BuildContext context) {
+  /**Future<void> _dialogAceiteosTermos(BuildContext context) {
     return showDialog<void>(
       context: context,
       builder: (BuildContext context) {
@@ -332,5 +334,39 @@ class _LoginPageState extends State<LoginPage> {
       },
     );
   }
+
+  final termosConsentimento = Row(
+
+    mainAxisAlignment: MainAxisAlignment.center,
+    children: [
+      Checkbox(
+        checkColor: Colors.white,
+        fillColor: MaterialStateProperty.resolveWith(getColor),
+        value: isChecked,
+        onChanged: (bool? value) {
+          setState(() {
+            isChecked = value!;
+          });
+        },
+      ),
+
+      TextButton(
+
+        child: const Text(
+
+          'Manter Conectado',
+
+          style: TextStyle(color: Colors.blue, fontSize: 16),
+
+        ),
+
+        onPressed: () {
+          _dialogAceiteosTermos(context);
+
+        },
+      )
+    ],
+  );*/
+
 
 }

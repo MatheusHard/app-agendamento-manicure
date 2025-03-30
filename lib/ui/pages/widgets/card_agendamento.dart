@@ -1,6 +1,8 @@
 
 import 'package:flutter/material.dart';
 
+import '../utils/metods/utils.dart';
+
 class CardAgendamento extends StatelessWidget {
   final String title;
   final String subtitle;
@@ -22,7 +24,7 @@ class CardAgendamento extends StatelessWidget {
       child: ListTile(
         onTap: onTap, // Ação de clique
         title: Text(title),
-        subtitle: Text(subtitle),
+        subtitle: Text(Utils.formatarData(subtitle, false)),
         leading: const CircleAvatar(
           backgroundImage: NetworkImage(
             "https://images.unsplash.com/photo-1547721064-da6cfb341d50",
