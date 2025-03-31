@@ -27,9 +27,10 @@ class ClienteApi implements IClienteApi {
         "createdAt": cliente.createdAt,
         "updatedAt": cliente.updatedAt,
         "name": cliente.name,
-        "cpf": cliente.cpf,
+        "cpf": "",
         "email": cliente.email,
         "telephone": cliente.telephone,
+        "deletado": cliente.deletado,
         "user": {
           "id":  user_id
         }
@@ -64,8 +65,29 @@ class ClienteApi implements IClienteApi {
   }
 
   @override
-  Future<bool> updateCliente(Cliente cliente, int user_id) {
-    // TODO: implement updateCliente
-    throw UnimplementedError();
+  Future<bool> updateCliente(Cliente cliente, int user_id) async {
+    var token = await Utils.recuperarToken(); // Pegue do localStorage, SharedPreferences, etc.
+
+    var response = await _customDio.dio.put(URL,
+      data: {
+        "id": cliente.id,
+        "name": cliente.name,
+        "createdAt": cliente.createdAt,
+        "updatedAt": cliente.updatedAt,
+        "name": cliente.name,
+        "cpf": "",
+        "email": cliente.email,
+        "telephone": cliente.telephone,
+        "deletado": cliente.deletado,
+        "user": {
+          "id":  user_id
+        }
+      },
+      options: Options(
+        headers: {
+          'Authorization': 'Bearer $token',
+        },),
+    );
+    return response.statusCode == 200;
   }
 }

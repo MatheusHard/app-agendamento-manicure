@@ -7,6 +7,7 @@ class Cliente {
   String? cpf;
   String? email;
   String? telephone;
+  bool? deletado;
 
   Cliente(
       {this.id,
@@ -15,7 +16,8 @@ class Cliente {
         this.name,
         this.cpf,
         this.email,
-        this.telephone});
+        this.telephone,
+        this.deletado});
 
   Cliente.fromJson(Map<String, dynamic> json) {
     id = json['id'];
@@ -25,6 +27,7 @@ class Cliente {
     cpf = json['cpf'];
     email = json['email'];
     telephone = json['telephone'];
+    deletado = json['deletado'];
   }
 
   Map<String, dynamic> toJson() {
@@ -36,6 +39,7 @@ class Cliente {
     data['cpf'] = cpf;
     data['email'] = email;
     data['telephone'] = telephone;
+    data['deletado'] = deletado;
     return data;
   }
 }

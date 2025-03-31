@@ -77,23 +77,60 @@ class _ClientePageState extends State<ClientePage> {
         child: isLoading ? Center(child: CircularProgressIndicator()): ListView.builder(
           padding: const EdgeInsets.all(8),
           itemCount: listaClientes.length,
-          itemBuilder: (BuildContext context, int index){
+          itemBuilder: (BuildContext context, int index) {
             final Cliente cliente = listaClientes[index];
 
-            return CardCliente(
-              onTap: (){
-                print("clicou cliente");
+            return Dismissible(
+              key: Key(cliente.id.toString()), // chave única, geralmente o ID do item
+              direction: DismissDirection.startToEnd, // arrasta da direita para a esquerda
+              background: Container(
+                alignment: Alignment.centerRight,
+                padding: const EdgeInsets.symmetric(horizontal: 20),
+                color: Colors.red,
+                child: const Icon(Icons.delete, color: Colors.white),
+              ),
+              confirmDismiss: (direction) async {
+                // opcional: exibir um diálogo de confirmação
+                return await showDialog(
+                  context: context,
+                  builder: (context) => AlertDialog(
+                    title: const Text('Confirmar'),
+                    content: const Text('Deseja realmente remover este cliente?'),
+                    actions: [
+                      TextButton(onPressed: () => Navigator.of(context).pop(false), child: const Text('Cancelar')),
+                      TextButton(onPressed: () => Navigator.of(context).pop(true), child: const Text('Remover')),
+                    ],
+                  ),
+                );
               },
+              onDismissed: (direction) async{
+                // remove o cliente da lista
+                setState(() {
+                  listaClientes.removeAt(index);
+                });
+                ///Atualizar o Cliente pra Deletado:
+                cliente.deletado = true;
+                await _atualizarCliente(cliente, userLogado?.data.user.id, context);
+
+              },
+              child: CardCliente(
+                onTap: () async {
+                  _popularClienteEditar(cliente);
+                  await _showDialogSaveCliente(context, userLogado!, true, cliente);
+                },
                 title: cliente.name ?? "",
                 subtitle: cliente.telephone ?? "",
-                icon: Icons.phone_forwarded);
+                icon: Icons.phone_forwarded,
+              ),
+            );
           },
         ),
+
       ),
       floatingActionButton: FloatingActionButton(
           onPressed: () async {
             _clearControllers();
-            await _showDialogSaveCliente(context, userLogado!);
+            await _showDialogSaveCliente(context, userLogado!, false, null);
             carregarClientes(); // <- atualiza lista após fechar o dialog
           },
         shape: const CircleBorder(),
@@ -250,7 +287,7 @@ class _ClientePageState extends State<ClientePage> {
   }
 
   ///Add Cliente
-  Future<void> _showDialogSaveCliente(BuildContext context, ScreenArgumentsUser argsUser) async {
+  Future<void> _showDialogSaveCliente(BuildContext context, ScreenArgumentsUser argsUser, bool editar, Cliente? cliente) async {
     bool isLoader = false; // <-- Fora do builder, controlado pelo setState do StatefulBuilder
 
     return await showDialog<void>(
@@ -288,7 +325,6 @@ class _ClientePageState extends State<ClientePage> {
                                     child: Text("", style: AppTextStyles.vacinaNome),
                                   ),
                                   widgetName(),
-                                  widgetCpf(),
                                   widgetEmail(),
                                   widgetPhone(),
                                 ],
@@ -312,21 +348,25 @@ class _ClientePageState extends State<ClientePage> {
                       setState(() {
                         isLoader = true;
                       });
-
                       Cliente c = _generateCliente();
-                      await _cadastrarCliente(c, argsUser.data.user.id, context);
-
-                      setState(() {
+                      if(!editar) {
+                        await _cadastrarCliente(c, argsUser.data.user.id, context);
+                      }else {
+                        c.id = cliente?.id;
+                        await _atualizarCliente(c, argsUser.data.user.id, context);
+                      }
+                       setState(() {
                         isLoader = false;
                         Navigator.pop(context);
+                        carregarClientes(); ///Relistar Clientes, após add/update
                       });
                     }
                   },
                   child: isLoader
                       ? SizedBox(
-                    width: 20,
-                    height: 20,
-                    child: CircularProgressIndicator(strokeWidth: 2),
+                        width: 20,
+                        height: 20,
+                        child: CircularProgressIndicator(strokeWidth: 2),
                   )
                       : Text('Salvar'),
                 ),
@@ -337,9 +377,8 @@ class _ClientePageState extends State<ClientePage> {
       },
     );
   }
-
+  ///Input Name
   widgetName(){
-
     return TextFormField(
       enabled: true,
       keyboardType: TextInputType.text,
@@ -357,8 +396,8 @@ class _ClientePageState extends State<ClientePage> {
       },
     );
   }
+  ///Input Email
   widgetEmail(){
-
     return TextFormField(
         enabled: true,
         keyboardType: TextInputType.emailAddress,
@@ -376,8 +415,8 @@ class _ClientePageState extends State<ClientePage> {
         return null;
       },);
   }
+  ///Input Phone
   widgetPhone(){
-
     return TextFormField(
         enabled: true,
         keyboardType: TextInputType.phone,
@@ -394,8 +433,8 @@ class _ClientePageState extends State<ClientePage> {
       return null;
     },);
   }
-  widgetCpf(){
-
+  ///Input Cpf
+  /*widgetCpf(){
     return TextFormField(
         enabled: true,
         keyboardType: TextInputType.number,
@@ -411,21 +450,22 @@ class _ClientePageState extends State<ClientePage> {
         }
       return null;
     },);
-  }
-
-
+  }*/
+  ///Focus dos inputs
   _initFocusNode(){
      _myFocusNodeName = FocusNode();
      _myFocusNodePhone = FocusNode();
      _myFocusNodeEmail = FocusNode();
      _myFocusNodeCpf = FocusNode();
   }
+  ///Limpar os inputs
   _clearControllers() {
     _nameController.clear();
     _cpfController.clear();
     _phoneController.clear();
     _emailController.clear();
   }
+  ///Validar cadastro
   bool _validateCliente() {
     bool flag = true;
     if(_nameController.text.isEmpty) return false;
@@ -434,21 +474,31 @@ class _ClientePageState extends State<ClientePage> {
     if(_emailController.text.isEmpty) return false;
     return flag;
   }
-
+ ///Retornar um cliente
  Cliente _generateCliente(){
-
-  Cliente cliente = Cliente();
-  cliente.name = _nameController.text;
-  cliente.telephone = _phoneController.text;
-  cliente.cpf = _cpfController.text;
-  cliente.email = _emailController.text;
-  cliente.createdAt = DateTime.now().toIso8601String();
-  cliente.updatedAt = DateTime.now().toIso8601String();
-
+    Cliente cliente = Cliente();
+    cliente.name = _nameController.text;
+    cliente.telephone = _phoneController.text;
+    cliente.cpf = _cpfController.text;
+    cliente.email = _emailController.text;
+    cliente.createdAt = DateTime.now().toIso8601String();
+    cliente.updatedAt = DateTime.now().toIso8601String();
   return cliente;
 }
-
+  ///Add Cliente
   Future<bool> _cadastrarCliente(Cliente c, user_id, BuildContext context) async {
       return await ClienteApi(context).addCliente(c, user_id);
+  }
+
+  ///Add Cliente
+  Future<bool> _atualizarCliente(Cliente c, user_id, BuildContext context) async {
+    return await ClienteApi(context).updateCliente(c, user_id);
+  }
+
+  void _popularClienteEditar(Cliente cliente) {
+    _nameController.text =  cliente.name ?? "";
+    _phoneController.text = cliente.telephone ?? "";
+    _cpfController.text = cliente.cpf ?? "";
+    _emailController.text = cliente.email ?? "";
   }
 }
