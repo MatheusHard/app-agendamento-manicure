@@ -7,6 +7,8 @@ import 'package:app_agendamento_manicure/ui/pages/utils/metods/utils.dart';
 import 'package:app_agendamento_manicure/ui/pages/widgets/card_cliente.dart';
 import 'package:app_agendamento_manicure/ui/pages/widgets/drawer/header_drawer.dart';
 import 'package:flutter/material.dart';
+import 'package:url_launcher/url_launcher.dart';
+import 'package:mask_text_input_formatter/mask_text_input_formatter.dart';
 
 import '../api/clienteapi.dart';
 import '../enums/drawer_sections.dart';
@@ -39,7 +41,15 @@ class _ClientePageState extends State<ClientePage> {
   late FocusNode _myFocusNodeName;
   late FocusNode _myFocusNodePhone;
   late FocusNode _myFocusNodeEmail;
-  late FocusNode _myFocusNodeCpf;
+
+  // Máscara para telefone brasileiro com DDD
+  final maskFormatter = MaskTextInputFormatter(
+    mask: '(##) #####-####',
+    filter: {"#": RegExp(r'[0-9]')},
+  );
+
+  // Valor puro (sem máscara)
+  String _telefoneSemMascara = '';
 
   @override
   void initState() {
@@ -295,7 +305,6 @@ class _ClientePageState extends State<ClientePage> {
       builder: (BuildContext context) {
         return StatefulBuilder(
           builder: (BuildContext context, StateSetter setState) {
-
             return AlertDialog(
               title: Center(child: Text("Cadastro Cliente")),
               titleTextStyle: AppTextStyles.titleCardVacina,
@@ -307,27 +316,29 @@ class _ClientePageState extends State<ClientePage> {
                   color: Colors.grey,
                 ),
                 width: 400,
-                height: 400,
+                height: 350,
                 child: Scaffold(
                   body: Form(
                     key: _formKey,
                     child: Stack(
                       children: [
                         Padding(
-                          padding: const EdgeInsets.symmetric(horizontal: 25),
+                          padding: const EdgeInsets.symmetric(horizontal: 10),
                           child: Center(
                             child: SingleChildScrollView(
                               child: Column(
                                 mainAxisAlignment: MainAxisAlignment.center,
                                 children: [
                                   Padding(
-                                    padding: const EdgeInsets.only(left: 0, top: 20.0, right: 0, bottom: 40),
+                                    padding: const EdgeInsets.only(left: 0, top: 10.0, right: 0, bottom: 10),
                                     child: Text("", style: AppTextStyles.vacinaNome),
                                   ),
                                   widgetName(),
                                   widgetEmail(),
                                   widgetPhone(),
-                                ],
+                                  Utils.sizedBox(10, 20),
+                                  widgetContatos(cliente!.telephone ?? ""),
+                                  ],
                               ),
                             ),
                           ),
@@ -422,14 +433,20 @@ class _ClientePageState extends State<ClientePage> {
         keyboardType: TextInputType.phone,
         controller: _phoneController,
         focusNode: _myFocusNodePhone,
+        inputFormatters: [maskFormatter],
         decoration: const InputDecoration(
             hintText: 'Telefone',
             icon: Icon(Icons.phone, color: Colors.blue,)
         ),
+        onChanged: (value) {
+          // Atualiza o número sem máscara sempre que digitar
+          _telefoneSemMascara = maskFormatter.getUnmaskedText();
+          debugPrint("Telefone limpo: $_telefoneSemMascara");
+        },
         validator: (value) {
-      if (value == null || value.isEmpty) {
-        return 'Telefone obrigatório';
-      }
+           if (value == null || value.isEmpty) {
+            return 'Telefone obrigatório';
+          }
       return null;
     },);
   }
@@ -456,7 +473,6 @@ class _ClientePageState extends State<ClientePage> {
      _myFocusNodeName = FocusNode();
      _myFocusNodePhone = FocusNode();
      _myFocusNodeEmail = FocusNode();
-     _myFocusNodeCpf = FocusNode();
   }
   ///Limpar os inputs
   _clearControllers() {
@@ -469,7 +485,6 @@ class _ClientePageState extends State<ClientePage> {
   bool _validateCliente() {
     bool flag = true;
     if(_nameController.text.isEmpty) return false;
-    if(_cpfController.text.isEmpty) return false;
     if(_phoneController.text.isEmpty) return false;
     if(_emailController.text.isEmpty) return false;
     return flag;
@@ -500,5 +515,40 @@ class _ClientePageState extends State<ClientePage> {
     _phoneController.text = cliente.telephone ?? "";
     _cpfController.text = cliente.cpf ?? "";
     _emailController.text = cliente.email ?? "";
+  }
+
+  Widget widgetContatos(String phone) {
+    return Row(
+      children: [
+        const Text("Contatos: "),
+        // Ícone de telefone
+        IconButton(
+          icon: const Icon(Icons.phone_in_talk),
+          onPressed: () async {
+            final Uri url = Uri(scheme: 'tel', path: phone);
+            if (await canLaunchUrl(url)) {
+              await launchUrl(url, mode: LaunchMode.externalApplication);
+            } else {
+              debugPrint("Não foi possível abrir o discador.");
+            }
+          },
+        ),
+        const SizedBox(width: 10),
+        // Ícone do WhatsApp
+        IconButton(
+          icon: const Icon(Icons.chat),
+          onPressed: () async {
+            // Remove caracteres inválidos do número
+            final String cleanedPhone = phone.replaceAll(RegExp(r'[^\d]'), '');
+            final Uri url = Uri.parse('https://wa.me/55$cleanedPhone');
+            if (await canLaunchUrl(url)) {
+              await launchUrl(url, mode: LaunchMode.externalApplication);
+            } else {
+              debugPrint("Não foi possível abrir o WhatsApp.");
+            }
+          },
+        ),
+      ],
+    );
   }
 }
