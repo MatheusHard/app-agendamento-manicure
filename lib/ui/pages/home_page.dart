@@ -2,20 +2,20 @@ import 'package:app_agendamento_manicure/ui/api/agendamentoapi.dart';
 import 'package:app_agendamento_manicure/ui/api/clienteapi.dart';
 import 'package:app_agendamento_manicure/ui/enums/drawer_sections.dart';
 import 'package:app_agendamento_manicure/ui/models/agendamento.dart';
+import 'package:app_agendamento_manicure/ui/models/cliente.dart';
 import 'package:app_agendamento_manicure/ui/pages/screen_arguments/ScreenArgumentsUser.dart';
 import 'package:app_agendamento_manicure/ui/pages/utils/core/app_colors.dart';
 import 'package:app_agendamento_manicure/ui/pages/utils/core/app_gradients.dart';
 import 'package:app_agendamento_manicure/ui/pages/utils/core/app_text_styles.dart';
+import 'package:app_agendamento_manicure/ui/pages/utils/metods/utils.dart';
 import 'package:app_agendamento_manicure/ui/pages/widgets/card_agendamento.dart';
 import 'package:app_agendamento_manicure/ui/pages/widgets/drawer/header_drawer.dart';
+import 'package:dropdown_search/dropdown_search.dart';
 import 'package:flutter/material.dart';
-
 import 'cliente_page.dart';
 
 class HomePage extends StatefulWidget {
-
   final ScreenArgumentsUser? userLogado;
-
   const HomePage(this.userLogado, {super.key});
 
   @override
@@ -24,18 +24,32 @@ class HomePage extends StatefulWidget {
 
 class _HomePageState extends State<HomePage> {
 
+  ScreenArgumentsUser? userLogado;
   final GlobalKey<ScaffoldState> key = GlobalKey(); // Create a key
+  final GlobalKey<FormState> _formKey = GlobalKey<FormState>();
+  final dropDownKey = GlobalKey<DropdownSearchState>();
   final int _currentIndex = 0;
   var currentPage = DrawerSections.dashboard;
   List<Agendamento> listaAgendamentos = [];
+  List<Cliente> listaClientes = [];
+  Cliente? clienteSelected;
+  DateTime date = DateTime.now();
+
   bool isLoading = true;
-  ScreenArgumentsUser? userLogado;
+  final _observacaoController = TextEditingController();
+  final _horaController = TextEditingController();
+  final _minutoController = TextEditingController();
+  final _dataController = TextEditingController();
+  late FocusNode _myFocusNodeHora;
+  late FocusNode _myFocusNodeMinuto;
 
   @override
   void initState() {
 
+    carregarClientes();
     userLogado = widget.userLogado;
     carregarAgendamentos();
+    _initFocusNode();
     testeAdd();
     super.initState();
   }
@@ -52,7 +66,7 @@ class _HomePageState extends State<HomePage> {
     ClienteApi(context).addCliente(c, 1);
     */
     var lista = await ClienteApi(context).getList(1, 1);
-  print(lista);
+    print(lista);
   }
   @override
   Widget build(BuildContext context) {
@@ -91,19 +105,63 @@ class _HomePageState extends State<HomePage> {
             itemBuilder: (BuildContext context, int index) {
               final Agendamento agendamento = listaAgendamentos[index];
 
-              return CardAgendamento(
-                title: agendamento.cliente?.name ?? "Sem nome",
-                subtitle: agendamento.createdAt ?? "Sem data",
-                icon: agendamento.finalizado == true
-                    ? Icons.check_circle
-                    : Icons.schedule,
-                onTap: () {
-                  print(agendamento.cliente?.name ?? "");
+              return Dismissible(
+                key: (Key(agendamento.id.toString())), // chave única, geralmente o ID do item
+                direction: DismissDirection.startToEnd, // arrasta da direita para a esquerda
+                background: Container(
+                  alignment: Alignment.centerRight,
+                  padding: const EdgeInsets.symmetric(horizontal: 20),
+                  color: Colors.red,
+                  child: const Icon(Icons.delete, color: Colors.white),
+                ),
+                confirmDismiss: (direction) async {
+                  // opcional: exibir um diálogo de confirmação
+                  return await showDialog(
+                    context: context,
+                    builder: (context) => AlertDialog(
+                      title: const Text('Confirmar'),
+                      content: const Text('Deseja realmente remover este cliente?'),
+                      actions: [
+                        TextButton(onPressed: () => Navigator.of(context).pop(false), child: const Text('Cancelar')),
+                        TextButton(onPressed: () => Navigator.of(context).pop(true), child: const Text('Remover')),
+                      ],
+                    ),
+                  );
                 },
+                onDismissed: (direction) async{
+                  // remove o cliente da lista
+                  setState(() {
+                    listaAgendamentos.removeAt(index);
+                  });
+                  ///Atualizar o Cliente pra Deletado:
+                  //await _atualizarA(cliente, userLogado?.data.user.id, context);
+
+                },
+                child: CardAgendamento(
+                  title: agendamento.cliente?.name ?? "Sem nome",
+                  subtitle: agendamento.createdAt ?? "Sem data",
+                  icon: agendamento.finalizado == true
+                      ? Icons.check_circle
+                      : Icons.schedule,
+                  onTap: () {
+                    print(agendamento.cliente?.name ?? "");
+                  },
+                ),
               );
             },
           )
         ),
+        ///Botão Add
+        floatingActionButton: FloatingActionButton(
+          onPressed: () async {
+            _clearControllers();
+            await _showDialogSaveAgendamento(context, userLogado!, false, null);
+            carregarAgendamentos(); // <- atualiza lista após fechar o dialog
+          },
+          shape: const CircleBorder(),
+          backgroundColor: Colors.green, // verde
+          tooltip: 'Adicionar Cliente',
+          child: const Icon(Icons.add, color: Colors.white,),),
      ),);
 
   }
@@ -199,12 +257,12 @@ class _HomePageState extends State<HomePage> {
       width: width,
     );
   }
-  final tabs = [
+  /*final tabs = [
     Container(child: Text("HOme"),),
     Padding( padding: const EdgeInsets.only( left:8.0, right: 8.0), child: Container(  color:
     AppColors.levelButtonTextFacil,)),
     Container()
-  ];
+  ];*/
 
   getBody() {
     return (_currentIndex == 0) ? HomePage(userLogado) : Container();
@@ -281,5 +339,284 @@ class _HomePageState extends State<HomePage> {
       });
     }
   }
+  Future<void> carregarClientes() async {
+    try {
+      final dados = await ClienteApi(context).getList(1, 1);
+      setState(() {
+        listaClientes = dados;
+        print("Crientes");
+        print(listaClientes);
+        //isLoading = false;
+      });
+    } catch (e) {
+      // Lida com erro, se quiser
+      setState(() {
+        //isLoading = false;
+      });
+    }
 
+  }
+
+  _clearControllers() {
+    _observacaoController.clear();
+   }
+
+  _showDialogSaveAgendamento(BuildContext context, ScreenArgumentsUser screenArgumentsUser, bool editar, Agendamento? agendamento) async {
+
+    var isLoader = false; // <-- Fora do builder, controlado pelo setState do StatefulBuilder
+
+    return await showDialog<void>(
+      context: context,
+      builder: (BuildContext context) {
+        return StatefulBuilder(
+          builder: (BuildContext context, StateSetter setState) {
+            return AlertDialog(
+              title: Center(child: Text("Cadastro Agendamento")),
+              titleTextStyle: AppTextStyles.titleCardVacina,
+              contentPadding: const EdgeInsets.only(left: 5, bottom: 0, right: 5, top: 0),
+              content: Container(
+                decoration: BoxDecoration(
+                  border: Border.all(color: AppColors.border),
+                  borderRadius: BorderRadius.circular(20),
+                  color: Colors.grey,
+                ),
+                width: 400,
+                height: 350,
+                child: Scaffold(
+                  body: Form(
+                    key: _formKey,
+                    child: Stack(
+                      children: [
+                        Padding(
+                          padding: const EdgeInsets.symmetric(horizontal: 10),
+                          child: Center(
+                            child: SingleChildScrollView(
+                              child: Column(
+                                mainAxisAlignment: MainAxisAlignment.center,
+                                children: [
+
+                                  widgetClientes(),
+                                  widgetDataCompleta(),
+                                  widgetObservacao(), ///Input Observação
+
+                                ],
+                              ),
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+              ),
+              actions: <Widget>[
+                TextButton(
+                  onPressed: () => Navigator.pop(context, 'Cancel'),
+                  child: const Text('Cancelar'),
+                ),
+                TextButton(
+                  onPressed: () async {
+                    if (_formKey.currentState!.validate() && _validateAgendamento()) {
+                      setState(() {
+                        isLoader = true;
+                      });
+                      Agendamento a = _generateAgendamento();
+                      if(!editar) {
+                        //await _cadastrarCliente(c, argsUser.data.user.id, context);
+                      }else {
+
+                        //await _atualizarCliente(c, argsUser.data.user.id, context);
+                      }
+                      setState(() {
+                        isLoader = false;
+                        Navigator.pop(context);
+                        carregarAgendamentos(); ///Relistar Agendamentos, após add/update
+                      });
+                    }
+                  },
+                  child: isLoader
+                      ? SizedBox(
+                    width: 20,
+                    height: 20,
+                    child: CircularProgressIndicator(strokeWidth: 2),
+                  )
+                      : Text('Salvar'),
+                ),
+              ],
+            );
+          },
+        );
+      },
+    );
+  }
+
+Future<List<Cliente>>  carregarTESTE() async{
+    List<Cliente> listaComp =[];
+
+    return listaComp;
+
+  }
+  ///Input Clientes
+  widgetClientes() {
+    return  SizedBox(
+        width: 300,
+        child: DropdownSearch<Cliente>(
+          asyncItems: (String filtro) async {
+            //final dados = await ClienteApi(context).getList(1, 1);
+            return listaClientes.where((c) => c.name!.toLowerCase().contains(filtro.toLowerCase())).toList();
+          },
+          itemAsString: (Cliente? cliente) => cliente?.name ?? 'Sem Nome',
+          onChanged: (Cliente? clienteSelecionado) {
+            clienteSelected = clienteSelecionado;
+            setState(() {});
+            },
+          dropdownBuilder: (context, clienteSelecionado) {
+            return Text(
+              clienteSelecionado?.name ?? 'Selecione',
+              style: const TextStyle(fontSize: 16),
+            );
+          },
+          dropdownDecoratorProps:  DropDownDecoratorProps(
+            dropdownSearchDecoration: InputDecoration(
+              labelText: 'Cliente',
+              border: OutlineInputBorder(),
+              icon: Icon(Icons.person)
+            ),
+          ),
+          popupProps: const PopupProps.menu(
+            showSearchBox: true,
+          ),
+        ));
+
+  }
+  ///Input Name
+  widgetObservacao(){
+    return TextFormField(
+      enabled: true,
+      keyboardType: TextInputType.text,
+      controller: _observacaoController,
+      decoration: const InputDecoration(
+          hintText: 'Observação',
+          icon: Icon(Icons.textsms, color: Colors.blue,)
+      ),
+
+    );
+  }
+  ///Input Name
+  widgetHora(){
+    return SizedBox(
+      width: 80, // ajuste aqui o tamanho
+      child: TextFormField(
+        maxLength: 2,
+        enabled: true,
+        keyboardType: TextInputType.number,
+        controller: _horaController,
+        focusNode: _myFocusNodeHora,
+        decoration: const InputDecoration(
+            hintText: 'Hora',
+            icon: Icon(Icons.alarm, color: Colors.green,)
+        ),
+        validator: (value) {
+          if (value == null || value.isEmpty) {
+            return 'Hora obrigatória';
+          }
+          return null;
+        },
+      ),
+    );
+  }
+  ///Input Name
+  widgetMinuto(){
+    return SizedBox(
+      width: 40, // ajuste aqui o tamanho
+      child: TextFormField(
+        maxLength: 2,
+        enabled: true,
+        keyboardType: TextInputType.text,
+        controller: _minutoController,
+        focusNode: _myFocusNodeMinuto,
+        decoration: const InputDecoration(
+            hintText: 'Min',
+        ),
+        validator: (value) {
+          if (value == null || value.isEmpty) {
+            return 'Minuto obrigatório';
+          }
+          return null;
+        },
+      ),
+    );
+  }
+  ///Widget Data
+  widgegData(){
+    return  Padding(
+      padding: const EdgeInsets.symmetric(
+          horizontal: 10, vertical: 8),
+      child: SizedBox(
+        width: 150,
+        child: TextFormField(
+          maxLength: 10,
+          readOnly: true,
+          onTap: () async {
+            DateTime? newDate = await showDatePicker(
+                context: context,
+                initialDate: date,
+                firstDate: DateTime(1900),
+                lastDate: DateTime(2040));
+            if (newDate == null) return;
+            setState(() {
+              date = newDate;
+              _dataController.value = TextEditingValue(
+                  text: Utils.formatarDateTime(date));
+            });
+          },
+          keyboardType: TextInputType.datetime,
+          controller: _dataController,
+          decoration: const InputDecoration(
+            icon: Icon(Icons.date_range, color: Colors.green),
+            hintText: "Data da Aplicação",
+          ),
+
+          validator: (value) {
+            if (value == null || value == "") {
+              return "Data de Aplicação Obrigatória!!!";
+            }
+            return null;
+          },
+        ),
+      ),
+
+    );
+}
+  ///Validar cadastro
+  bool _validateAgendamento() {
+    bool flag = true;
+    //Validações aqui
+    if(_horaController.text.isEmpty) return false;
+    if(_minutoController.text.isEmpty) return false;
+    return flag;
+  }
+widgetDataCompleta(){
+    return Row(
+      children: [
+        widgegData(),
+        widgetHora(),
+        Text(" : "),
+        widgetMinuto()
+      ],
+    );
+}
+  Agendamento _generateAgendamento() {
+      Agendamento a = Agendamento();
+      a.observacao = _observacaoController.text;
+      a.createdAt = Utils.generateDataHora(10, 25);
+      a.updatedAt = DateTime.now().toIso8601String();
+      print("DAta ${a.createdAt!}");
+    return a;
+  }
+  ///Focus dos inputs
+  _initFocusNode(){
+    _myFocusNodeHora = FocusNode();
+    _myFocusNodeMinuto = FocusNode();
+    }
 }

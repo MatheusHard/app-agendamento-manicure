@@ -203,7 +203,10 @@ import 'package:shared_preferences/shared_preferences.dart';
     final prefs = await SharedPreferences.getInstance();
     await prefs.remove('user');
   }
-
+  static String generateDataHora(int horas, int minutos){
+    var agora = DateTime.now();
+    return DateTime(agora.year, agora.month, agora.day, horas, minutos).toIso8601String();
+    }
    static Future<bool> isConnected() async {
 
     bool flag = false;

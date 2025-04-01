@@ -32,7 +32,7 @@ class _ClientePageState extends State<ClientePage> {
   bool isLoading = true;
   List<Cliente> listaClientes = [];
 
-  ///DAdos Cliente
+  ///Dados Cliente
   final _nameController = TextEditingController();
   final _phoneController = TextEditingController();
   final _emailController = TextEditingController();
