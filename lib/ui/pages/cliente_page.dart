@@ -333,11 +333,11 @@ class _ClientePageState extends State<ClientePage> {
                                     padding: const EdgeInsets.only(left: 0, top: 10.0, right: 0, bottom: 10),
                                     child: Text("", style: AppTextStyles.vacinaNome),
                                   ),
-                                  widgetName(),
-                                  widgetEmail(),
-                                  widgetPhone(),
+                                  widgetName(), ///Input Nome
+                                  widgetEmail(), ///Input Email
+                                  widgetPhone(), ///Input Telefone
                                   Utils.sizedBox(10, 20),
-                                  widgetContatos(cliente!.telephone ?? ""),
+                                  widgetContatos(cliente != null ? cliente.telephone! : ""), ///Buttons Encaminhar Telefone e Whattzap
                                   ],
                               ),
                             ),
