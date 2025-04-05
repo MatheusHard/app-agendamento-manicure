@@ -42,7 +42,7 @@ class _HomePageState extends State<HomePage> {
   final _minutoController = TextEditingController();
   final _dataController = TextEditingController();
   var _mensagemErroCliente;
-
+  bool _finalizado = false;
   late FocusNode _myFocusNodeHora;
   late FocusNode _myFocusNodeMinuto;
 
@@ -401,12 +401,13 @@ class _HomePageState extends State<HomePage> {
                           child: Center(
                             child: SingleChildScrollView(
                               child: Column(
-                                mainAxisAlignment: MainAxisAlignment.center,
+                                mainAxisAlignment: MainAxisAlignment.start,
                                 children: [
 
                                   widgetClientes(), ///Input Clientes
                                   widgetDataCompleta(), ///Input Data Completa
                                   widgetObservacao(), ///Input Observação
+                                  widgetFinalizado(setState) ///Check Finalizado
 
                                 ],
                               ),
@@ -431,7 +432,9 @@ class _HomePageState extends State<HomePage> {
                       });
 
                       String? created = editar ? agendamento?.createdAt : null;
-                      Agendamento a = _generateAgendamento(editar, created);
+                      int? id = agendamento?.id;
+
+                      Agendamento a = _generateAgendamento(editar, created, id);
                       if(!editar) {
                         await _cadastrarAgendamento(a, context);
                       }else {
@@ -506,7 +509,8 @@ class _HomePageState extends State<HomePage> {
                   dropdownSearchDecoration: InputDecoration(
                     labelText: 'Cliente',
                     border: const OutlineInputBorder(),
-                    icon: const Icon(Icons.person),
+                    prefixIcon: const Icon(Icons.person),
+                    contentPadding: const EdgeInsets.fromLTRB(0, 16, 0, 16), // ← Aqui
                     errorText: field.errorText,
                   ),
                 ),
@@ -522,15 +526,18 @@ class _HomePageState extends State<HomePage> {
   }
   ///Input Name
   widgetObservacao(){
-    return TextFormField(
-      enabled: true,
-      keyboardType: TextInputType.text,
-      controller: _observacaoController,
-      decoration: const InputDecoration(
-          hintText: 'Observação',
-          icon: Icon(Icons.textsms, color: Colors.blue,)
-      ),
+    return Padding(
+      padding: const EdgeInsets.only(left: 34, ),
+      child: TextFormField(
+        enabled: true,
+        keyboardType: TextInputType.text,
+        controller: _observacaoController,
+        decoration: const InputDecoration(
+            hintText: 'Observação',
+            icon: Icon(Icons.textsms, color: Colors.blue,)
+        ),
 
+      ),
     );
   }
   ///Input Name
@@ -580,8 +587,7 @@ class _HomePageState extends State<HomePage> {
   ///Widget Data
   widgetData(){
     return  Padding(
-      padding: const EdgeInsets.symmetric(
-          horizontal: 10, vertical: 8),
+      padding: const EdgeInsets.only(left: 32, top: 8, right: 16),
       child: SizedBox(
         width: 150,
         child: TextFormField(
@@ -619,6 +625,26 @@ class _HomePageState extends State<HomePage> {
     );
 }
 
+  Widget widgetFinalizado(StateSetter setDialogState) {
+    return Padding(
+      padding: EdgeInsets.only(left: 16, right: 16),
+      child: CheckboxListTile(
+        title: const Text("Finalizado"),
+        //subtitle: const Text("Clique para aceitar."),
+        value: _finalizado,
+        onChanged: (bool? newValue) {
+          setDialogState(() {
+            _finalizado = newValue!;
+            print(_finalizado);
+          });
+        },
+        activeColor: Colors.green,
+        controlAffinity: ListTileControlAffinity.leading,
+      ),
+    );
+  }
+
+
   ///Validar cadastro
   bool _validateAgendamento() {
     bool flag = true;
@@ -630,8 +656,6 @@ class _HomePageState extends State<HomePage> {
     if (_horaController.text.isEmpty) flag = false;
     if (_minutoController.text.isEmpty) flag = false;
     if (_dataController.text.isEmpty) flag = false;
-
-
 
     if (clienteSelected == null) {
       erroCliente = 'Selecione um cliente';
@@ -662,7 +686,7 @@ class _HomePageState extends State<HomePage> {
 }
 
   ///Gerar objeto Agendamento:
-  Agendamento _generateAgendamento(bool editar, String? created) {
+  Agendamento _generateAgendamento(bool editar, String? created, int? id_agendamento) {
 
       User user = User();
       Cliente cliente = Cliente();
@@ -671,11 +695,13 @@ class _HomePageState extends State<HomePage> {
       String dataFormatada = Utils.generateDataHora(date, int.parse(_horaController.text), int.parse(_minutoController.text));
 
       Agendamento a = Agendamento();
+      if(editar) a.id = id_agendamento;
       a.observacao = _observacaoController.text;
       a.createdAt = editar ? created : Utils.generateDataHoraSpring();
       a.updatedAt = dataFormatada;
       a.user = user;
       a.cliente = cliente;
+      a.finalizado = editar ? _finalizado : false;
 
     return a;
   }

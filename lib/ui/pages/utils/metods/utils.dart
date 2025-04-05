@@ -204,7 +204,7 @@ import 'package:shared_preferences/shared_preferences.dart';
     await prefs.remove('user');
   }
   static String generateDataHora(DateTime data, int horas, int minutos){
-    return DateTime(data.year, data.month, data.day, horas, minutos, 00).toIso8601String();
+    return DateTime(data.year, data.month, data.day, horas, minutos, 10).toIso8601String();
   }
 
   static int generateHourOfDate(String? dataString){

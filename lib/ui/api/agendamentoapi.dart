@@ -49,6 +49,7 @@ class AgendamentoApi implements IAgendamentoApi {
 
     var response = await _customDio.dio.put(URL,
       data: 	{
+        "id": a.id,
         "createdAt": a.createdAt,
         "updatedAt": a.updatedAt,
         "finalizado": a.finalizado,
