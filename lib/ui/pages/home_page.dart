@@ -12,6 +12,7 @@ import 'package:app_agendamento_manicure/ui/pages/widgets/card_agendamento.dart'
 import 'package:app_agendamento_manicure/ui/pages/widgets/drawer/header_drawer.dart';
 import 'package:dropdown_search/dropdown_search.dart';
 import 'package:flutter/material.dart';
+import '../models/user.dart';
 import 'cliente_page.dart';
 
 class HomePage extends StatefulWidget {
@@ -40,6 +41,8 @@ class _HomePageState extends State<HomePage> {
   final _horaController = TextEditingController();
   final _minutoController = TextEditingController();
   final _dataController = TextEditingController();
+  var _mensagemErroCliente;
+
   late FocusNode _myFocusNodeHora;
   late FocusNode _myFocusNodeMinuto;
 
@@ -143,8 +146,8 @@ class _HomePageState extends State<HomePage> {
                   icon: agendamento.finalizado == true
                       ? Icons.check_circle
                       : Icons.schedule,
-                  onTap: () {
-                    print(agendamento.cliente?.name ?? "");
+                  onTap: () async {
+                    await _showDialogSaveAgendamento(context, userLogado!, true, agendamento);
                   },
                 ),
               );
@@ -356,15 +359,21 @@ class _HomePageState extends State<HomePage> {
     }
 
   }
-
+  ///Limpar os campos
   _clearControllers() {
+    _dataController.clear();
+    _horaController.clear();
+    _minutoController.clear();
     _observacaoController.clear();
+    clienteSelected = null;
    }
 
+   ///Dialog Cadastro/Edição Agendamento
   _showDialogSaveAgendamento(BuildContext context, ScreenArgumentsUser screenArgumentsUser, bool editar, Agendamento? agendamento) async {
 
-    var isLoader = false; // <-- Fora do builder, controlado pelo setState do StatefulBuilder
+    if(editar) _initEditar(agendamento);
 
+    var isLoader = false; // <-- Fora do builder, controlado pelo setState do StatefulBuilder
     return await showDialog<void>(
       context: context,
       builder: (BuildContext context) {
@@ -395,8 +404,8 @@ class _HomePageState extends State<HomePage> {
                                 mainAxisAlignment: MainAxisAlignment.center,
                                 children: [
 
-                                  widgetClientes(),
-                                  widgetDataCompleta(),
+                                  widgetClientes(), ///Input Clientes
+                                  widgetDataCompleta(), ///Input Data Completa
                                   widgetObservacao(), ///Input Observação
 
                                 ],
@@ -418,14 +427,15 @@ class _HomePageState extends State<HomePage> {
                   onPressed: () async {
                     if (_formKey.currentState!.validate() && _validateAgendamento()) {
                       setState(() {
-                        isLoader = true;
+                      isLoader = true;
                       });
-                      Agendamento a = _generateAgendamento();
-                      if(!editar) {
-                        //await _cadastrarCliente(c, argsUser.data.user.id, context);
-                      }else {
 
-                        //await _atualizarCliente(c, argsUser.data.user.id, context);
+                      String? created = editar ? agendamento?.createdAt : null;
+                      Agendamento a = _generateAgendamento(editar, created);
+                      if(!editar) {
+                        await _cadastrarAgendamento(a, context);
+                      }else {
+                        await _atualizarAgendamento(a, context);
                       }
                       setState(() {
                         isLoader = false;
@@ -449,45 +459,66 @@ class _HomePageState extends State<HomePage> {
       },
     );
   }
+  ///Add Cliente
+  Future<bool> _cadastrarAgendamento(Agendamento a, BuildContext context) async {
+    return await AgendamentoApi(context).addAgendamento(a);
+  }
 
-Future<List<Cliente>>  carregarTESTE() async{
-    List<Cliente> listaComp =[];
-
-    return listaComp;
-
+  ///Add Cliente
+  Future<bool> _atualizarAgendamento(Agendamento a, BuildContext context) async {
+    return await AgendamentoApi(context).updateAgendamento(a);
   }
   ///Input Clientes
   widgetClientes() {
-    return  SizedBox(
-        width: 300,
-        child: DropdownSearch<Cliente>(
-          asyncItems: (String filtro) async {
-            //final dados = await ClienteApi(context).getList(1, 1);
-            return listaClientes.where((c) => c.name!.toLowerCase().contains(filtro.toLowerCase())).toList();
-          },
-          itemAsString: (Cliente? cliente) => cliente?.name ?? 'Sem Nome',
-          onChanged: (Cliente? clienteSelecionado) {
-            clienteSelected = clienteSelecionado;
-            setState(() {});
-            },
-          dropdownBuilder: (context, clienteSelecionado) {
-            return Text(
-              clienteSelecionado?.name ?? 'Selecione',
-              style: const TextStyle(fontSize: 16),
-            );
-          },
-          dropdownDecoratorProps:  DropDownDecoratorProps(
-            dropdownSearchDecoration: InputDecoration(
-              labelText: 'Cliente',
-              border: OutlineInputBorder(),
-              icon: Icon(Icons.person)
-            ),
-          ),
-          popupProps: const PopupProps.menu(
-            showSearchBox: true,
-          ),
-        ));
-
+    return SizedBox(
+      width: 300,
+      child: FormField<Cliente>(
+        initialValue: clienteSelected, // <- aqui seta o valor inicial
+        validator: (value) {
+          if (value == null) {
+            return 'Selecione um cliente';
+          }
+          return null;
+        },
+        builder: (FormFieldState<Cliente> field) {
+          return Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              DropdownSearch<Cliente>(
+                asyncItems: (String filtro) async {
+                  return listaClientes
+                      .where((c) => c.name!.toLowerCase().contains(filtro.toLowerCase()))
+                      .toList();
+                },
+                selectedItem: field.value, // <-- usa o valor controlado pelo FormField
+                itemAsString: (Cliente? cliente) => cliente?.name ?? 'Sem Nome',
+                onChanged: (Cliente? clienteSelecionado) {
+                  clienteSelected = clienteSelecionado;
+                  field.didChange(clienteSelecionado); // notifica mudança
+                },
+                dropdownBuilder: (context, clienteSelecionado) {
+                  return Text(
+                    clienteSelecionado?.name ?? 'Selecione',
+                    style: const TextStyle(fontSize: 16),
+                  );
+                },
+                dropdownDecoratorProps: DropDownDecoratorProps(
+                  dropdownSearchDecoration: InputDecoration(
+                    labelText: 'Cliente',
+                    border: const OutlineInputBorder(),
+                    icon: const Icon(Icons.person),
+                    errorText: field.errorText,
+                  ),
+                ),
+                popupProps: const PopupProps.menu(
+                  showSearchBox: true,
+                ),
+              ),
+            ],
+          );
+        },
+      ),
+    );
   }
   ///Input Name
   widgetObservacao(){
@@ -505,7 +536,7 @@ Future<List<Cliente>>  carregarTESTE() async{
   ///Input Name
   widgetHora(){
     return SizedBox(
-      width: 80, // ajuste aqui o tamanho
+      width: 35, // ajuste aqui o tamanho
       child: TextFormField(
         maxLength: 2,
         enabled: true,
@@ -513,13 +544,12 @@ Future<List<Cliente>>  carregarTESTE() async{
         controller: _horaController,
         focusNode: _myFocusNodeHora,
         decoration: const InputDecoration(
-            hintText: 'Hora',
-            icon: Icon(Icons.alarm, color: Colors.green,)
+            hintText: 'HH',
+            //icon: Icon(Icons.alarm, color: Colors.green,)
         ),
         validator: (value) {
-          if (value == null || value.isEmpty) {
-            return 'Hora obrigatória';
-          }
+          if (value == null || value.isEmpty)  return 'Erro Obrigatória!!!';
+          if(int.parse(_horaController.text) < 0 || int.parse(_horaController.text) > 24) return 'Hora deve ser entre 0 e 24';
           return null;
         },
       ),
@@ -528,27 +558,27 @@ Future<List<Cliente>>  carregarTESTE() async{
   ///Input Name
   widgetMinuto(){
     return SizedBox(
-      width: 40, // ajuste aqui o tamanho
+      width: 35, // ajuste aqui o tamanho
       child: TextFormField(
         maxLength: 2,
         enabled: true,
-        keyboardType: TextInputType.text,
+        keyboardType: TextInputType.number,
         controller: _minutoController,
         focusNode: _myFocusNodeMinuto,
         decoration: const InputDecoration(
-            hintText: 'Min',
+            hintText: 'mm',
         ),
         validator: (value) {
-          if (value == null || value.isEmpty) {
-            return 'Minuto obrigatório';
-          }
+          if (value == null || value.isEmpty)  return 'Minuto obrigatório!!!';
+          if(int.parse(_minutoController.text) < 0 || int.parse(_minutoController.text) > 60) return 'Minutos devem ser entre 0 e 60!!!';
+
           return null;
         },
       ),
     );
   }
   ///Widget Data
-  widgegData(){
+  widgetData(){
     return  Padding(
       padding: const EdgeInsets.symmetric(
           horizontal: 10, vertical: 8),
@@ -574,7 +604,7 @@ Future<List<Cliente>>  carregarTESTE() async{
           controller: _dataController,
           decoration: const InputDecoration(
             icon: Icon(Icons.date_range, color: Colors.green),
-            hintText: "Data da Aplicação",
+            hintText: "Data",
           ),
 
           validator: (value) {
@@ -588,35 +618,83 @@ Future<List<Cliente>>  carregarTESTE() async{
 
     );
 }
+
   ///Validar cadastro
   bool _validateAgendamento() {
     bool flag = true;
-    //Validações aqui
-    if(_horaController.text.isEmpty) return false;
-    if(_minutoController.text.isEmpty) return false;
+
+    String? erroCliente;
+    // Outras variáveis de erro, se quiser exibir no futuro
+
+    // Validações
+    if (_horaController.text.isEmpty) flag = false;
+    if (_minutoController.text.isEmpty) flag = false;
+    if (_dataController.text.isEmpty) flag = false;
+
+
+
+    if (clienteSelected == null) {
+      erroCliente = 'Selecione um cliente';
+      flag = false;
+    }
+
+    // Atualiza os estados de erro depois de validar tudo
+    setState(() {
+      _mensagemErroCliente = erroCliente;
+      print('Erro cliente: $_mensagemErroCliente');
+
+    });
+
     return flag;
   }
-widgetDataCompleta(){
+
+
+  ///Inputs de Data, Hora e Min
+  widgetDataCompleta(){
     return Row(
       children: [
-        widgegData(),
+        widgetData(),
         widgetHora(),
         Text(" : "),
         widgetMinuto()
       ],
     );
 }
-  Agendamento _generateAgendamento() {
+
+  ///Gerar objeto Agendamento:
+  Agendamento _generateAgendamento(bool editar, String? created) {
+
+      User user = User();
+      Cliente cliente = Cliente();
+      user.id = userLogado?.data.user.id;
+      cliente.id = clienteSelected?.id;
+      String dataFormatada = Utils.generateDataHora(date, int.parse(_horaController.text), int.parse(_minutoController.text));
+
       Agendamento a = Agendamento();
       a.observacao = _observacaoController.text;
-      a.createdAt = Utils.generateDataHora(10, 25);
-      a.updatedAt = DateTime.now().toIso8601String();
-      print("DAta ${a.createdAt!}");
+      a.createdAt = editar ? created : Utils.generateDataHoraSpring();
+      a.updatedAt = dataFormatada;
+      a.user = user;
+      a.cliente = cliente;
+
     return a;
   }
+
   ///Focus dos inputs
   _initFocusNode(){
     _myFocusNodeHora = FocusNode();
     _myFocusNodeMinuto = FocusNode();
     }
+
+  void _initEditar(Agendamento? agendamento) {
+    _observacaoController.text = agendamento?.observacao ?? "";
+    _minutoController.text = Utils.generateMinutesOfDate(agendamento?.createdAt).toString();
+    _horaController.text = Utils.generateHourOfDate(agendamento?.createdAt).toString();
+    setState(() {
+      clienteSelected = agendamento?.cliente;
+      date = DateTime.parse(agendamento!.updatedAt!);
+      _dataController.text = Utils.formatarData(date.toString(), true);
+    });
+
+  }
 }

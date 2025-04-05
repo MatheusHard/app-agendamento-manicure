@@ -23,25 +23,50 @@ class AgendamentoApi implements IAgendamentoApi {
     var token = await Utils.recuperarToken(); // Pegue do localStorage, SharedPreferences, etc.
 
     var response = await _customDio.dio.post(URL,
-                                              data: {'createdAt':   a.createdAt,
-                                                      'updatedAt':  a.updatedAt,
-                                                      'finalizado': a.finalizado,
-                                                      'observacao': a.observacao,
-                                                      'user': {
-                                                        'id': a.user?.id
+                                             data: 	{
+                                                      "createdAt": a.createdAt,
+                                                      "updatedAt": a.updatedAt,
+                                                      "finalizado": a.finalizado,
+                                                      "observacao": a.observacao,
+                                                      "user": {
+                                                       "id": a.user?.id
                                                       },
-                                                      'cliente': {
-                                                        'id': a.cliente?.id
+                                                      "cliente": {
+                                                       "id": a.cliente?.id
                                                       }
-                                                  },
-                                                options: Options(
-                                                headers: {
+                                                   },
+                                             options: Options(
+                                             headers: {
                                                 'Authorization': 'Bearer $token',
-                                                },),
+                                             },),
                                 );
     return true;
   }
 
+  @override
+  Future<bool> updateAgendamento(Agendamento a) async {
+    var token = await Utils.recuperarToken(); // Pegue do localStorage, SharedPreferences, etc.
+
+    var response = await _customDio.dio.put(URL,
+      data: 	{
+        "createdAt": a.createdAt,
+        "updatedAt": a.updatedAt,
+        "finalizado": a.finalizado,
+        "observacao": a.observacao,
+        "user": {
+          "id": a.user?.id
+        },
+        "cliente": {
+          "id": a.cliente?.id
+        }
+      },
+      options: Options(
+        headers: {
+          'Authorization': 'Bearer $token',
+        },),
+    );
+    return response.statusCode == 200;
+  }
   @override
   Future<List<Agendamento>> getList(int user_id, int cliente_id, bool finalizado) async {
 
@@ -59,7 +84,6 @@ class AgendamentoApi implements IAgendamentoApi {
 
       return agendamentos;
     }
-
     return [];
   }
 }
