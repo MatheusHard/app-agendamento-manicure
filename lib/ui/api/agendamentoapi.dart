@@ -4,13 +4,15 @@ import 'package:app_agendamento_manicure/ui/pages/utils/metods/utils.dart';
 import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
 
+import '../dto/agendamento_dto.dart';
 import 'interfaces/iagendamentoapi.dart';
 
 class AgendamentoApi implements IAgendamentoApi {
 
   BuildContext? _context;
   Configs _customDio = Configs();
-  final URL = "/agendamentos";
+  final URL = '/agendamentos';
+  final FILTRAR = '/filtrar';
 
 
   AgendamentoApi(BuildContext context) {
@@ -86,5 +88,28 @@ class AgendamentoApi implements IAgendamentoApi {
       return agendamentos;
     }
     return [];
+  }
+
+  @override
+  Future<List<Agendamento>> getListByFilter(AgendamentoDTO a) async {
+    var token = await Utils.recuperarToken(); // Pegue do localStorage, SharedPreferences, etc.
+    var response = await _customDio.dio.post(
+      URL+FILTRAR,
+      data: 	a.toJson(),
+      options: Options(
+      headers: {
+        'Authorization': 'Bearer $token',
+      },),);
+    if (response.statusCode == 200) {
+      var lista = response.data;
+      // Aqui você pode fazer o mapeamento de lista para objetos Agendamento
+      List<Agendamento> agendamentos = (lista as List)
+          .map((json) => Agendamento.fromJson(json))
+          .toList();
+
+      return agendamentos;
+    }
+    return [];
+
   }
 }

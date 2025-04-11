@@ -1,4 +1,5 @@
 import 'package:app_agendamento_manicure/ui/models/cliente.dart';
+import 'package:app_agendamento_manicure/ui/pages/pix_page.dart';
 import 'package:app_agendamento_manicure/ui/pages/screen_arguments/ScreenArgumentsUser.dart';
 import 'package:app_agendamento_manicure/ui/pages/utils/core/app_colors.dart';
 import 'package:app_agendamento_manicure/ui/pages/utils/core/app_gradients.dart';
@@ -243,8 +244,9 @@ class _ClientePageState extends State<ClientePage> {
           menuItem(0, "DashBoard", Icons.dashboard_outlined, currentPage == DrawerSections.dashboard ? true : false, usuario),
           menuItem(1, "Clientes", Icons.people, currentPage == DrawerSections.cliente ? true : false, usuario),
           menuItem(2, "Perfil", Icons.person, currentPage == DrawerSections.perfil ? true : false, usuario),
+          menuItem(3, "QrCode", Icons.qr_code, currentPage == DrawerSections.qrcode ? true : false, usuario),
           const Divider(),
-          menuItem(3, "Sair", Icons.exit_to_app, currentPage == DrawerSections.exit ? true : false, usuario),
+          menuItem(4, "Sair", Icons.exit_to_app, currentPage == DrawerSections.exit ? true : false, usuario),
         ],
       ),
     );
@@ -277,6 +279,10 @@ class _ClientePageState extends State<ClientePage> {
                       MaterialPageRoute(builder: (context) => PerfilPage(usuario)));*/
                   break;
                 case 3:
+                  currentPage = DrawerSections.qrcode;
+                  Navigator.push(context, MaterialPageRoute(builder: (context) => PixPage()));
+                  break;
+                case 4:
                   currentPage = DrawerSections.exit;
                   //_dialogSair();
                   break;

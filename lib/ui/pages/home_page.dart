@@ -1,8 +1,10 @@
 import 'package:app_agendamento_manicure/ui/api/agendamentoapi.dart';
 import 'package:app_agendamento_manicure/ui/api/clienteapi.dart';
+import 'package:app_agendamento_manicure/ui/dto/agendamento_dto.dart';
 import 'package:app_agendamento_manicure/ui/enums/drawer_sections.dart';
 import 'package:app_agendamento_manicure/ui/models/agendamento.dart';
 import 'package:app_agendamento_manicure/ui/models/cliente.dart';
+import 'package:app_agendamento_manicure/ui/pages/pix_page.dart';
 import 'package:app_agendamento_manicure/ui/pages/screen_arguments/ScreenArgumentsUser.dart';
 import 'package:app_agendamento_manicure/ui/pages/utils/core/app_colors.dart';
 import 'package:app_agendamento_manicure/ui/pages/utils/core/app_gradients.dart';
@@ -131,13 +133,15 @@ class _HomePageState extends State<HomePage> {
                     ),
                   );
                 },
-                onDismissed: (direction) async{
-                  // remove o cliente da lista
+                onDismissed: (direction) async {
+                  // remove o agendamento da lista
                   setState(() {
                     listaAgendamentos.removeAt(index);
                   });
-                  ///Atualizar o Cliente pra Deletado:
-                  //await _atualizarA(cliente, userLogado?.data.user.id, context);
+                  //TODO
+                  ///Atualizar o Agendamento pra Deletado:
+                  //agendamento.deletado = true;
+                 // await _atualizarAgendamento(agendamento, context);
 
                 },
                 child: CardAgendamento(
@@ -166,7 +170,6 @@ class _HomePageState extends State<HomePage> {
           tooltip: 'Adicionar Cliente',
           child: const Icon(Icons.add, color: Colors.white,),),
      ),);
-
   }
 
   _dialogSair() async {
@@ -279,8 +282,9 @@ class _HomePageState extends State<HomePage> {
           menuItem(0, "DashBoard", Icons.dashboard_outlined, currentPage == DrawerSections.dashboard ? true : false, usuario),
           menuItem(1, "Clientes", Icons.people, currentPage == DrawerSections.cliente ? true : false, usuario),
           menuItem(2, "Perfil", Icons.person, currentPage == DrawerSections.perfil ? true : false, usuario),
+          menuItem(3, "QrCode", Icons.qr_code, currentPage == DrawerSections.qrcode ? true : false, usuario),
           const Divider(),
-          menuItem(3, "Sair", Icons.exit_to_app, currentPage == DrawerSections.exit ? true : false, usuario),
+          menuItem(4, "Sair", Icons.exit_to_app, currentPage == DrawerSections.exit ? true : false, usuario),
         ],
       ),
     );
@@ -298,17 +302,17 @@ class _HomePageState extends State<HomePage> {
                   currentPage = DrawerSections.dashboard;
                   break;
                 case 1:
-                  Navigator.push(
-                      context,
-                      MaterialPageRoute(builder: (context) => ClientePage(usuario)));
+                  Navigator.push(context, MaterialPageRoute(builder: (context) => ClientePage(usuario)));
                   break;
                 case 2:
                   currentPage = DrawerSections.perfil;
-                 /* Navigator.push(
-                      context,
-                      MaterialPageRoute(builder: (context) => PerfilPage(usuario)));*/
+                  /*Navigator.push(context, MaterialPageRoute(builder: (context) => PerfilPage(usuario)));*/
                   break;
                 case 3:
+                  currentPage = DrawerSections.qrcode;
+                  Navigator.push(context, MaterialPageRoute(builder: (context) => PixPage()));
+                  break;
+                case 4:
                   currentPage = DrawerSections.exit;
                   _dialogSair();
                   break;
@@ -331,6 +335,15 @@ class _HomePageState extends State<HomePage> {
   Future<void> carregarAgendamentos() async {
     try {
       final dados = await AgendamentoApi(context).getList(1, 1, true);
+
+      AgendamentoDTO a = AgendamentoDTO();
+      a.user = User();
+      a.cliente = Cliente();
+      a.dataInicial = '2025-04-10';
+      a.dataFinal = '2025-04-10';
+
+
+      final listateste = await AgendamentoApi(context).getListByFilter(a);
       setState(() {
         listaAgendamentos = dados;
         isLoading = false;
@@ -474,7 +487,7 @@ class _HomePageState extends State<HomePage> {
   ///Input Clientes
   widgetClientes() {
     return SizedBox(
-      width: 300,
+      width: 250,
       child: FormField<Cliente>(
         initialValue: clienteSelected, // <- aqui seta o valor inicial
         validator: (value) {
@@ -527,7 +540,7 @@ class _HomePageState extends State<HomePage> {
   ///Input Name
   widgetObservacao(){
     return Padding(
-      padding: const EdgeInsets.only(left: 34, ),
+      padding: const EdgeInsets.only(left: 15, ),
       child: TextFormField(
         enabled: true,
         keyboardType: TextInputType.text,
@@ -587,7 +600,7 @@ class _HomePageState extends State<HomePage> {
   ///Widget Data
   widgetData(){
     return  Padding(
-      padding: const EdgeInsets.only(left: 32, top: 8, right: 16),
+      padding: const EdgeInsets.only(left: 15, top: 8, right: 16),
       child: SizedBox(
         width: 150,
         child: TextFormField(
@@ -624,10 +637,10 @@ class _HomePageState extends State<HomePage> {
 
     );
 }
-
-  Widget widgetFinalizado(StateSetter setDialogState) {
+  ///Widget Finalizado
+  widgetFinalizado(StateSetter setDialogState) {
     return Padding(
-      padding: EdgeInsets.only(left: 16, right: 16),
+      padding: EdgeInsets.only(left: 0, right: 16, top: 5),
       child: CheckboxListTile(
         title: const Text("Finalizado"),
         //subtitle: const Text("Clique para aceitar."),
@@ -644,13 +657,11 @@ class _HomePageState extends State<HomePage> {
     );
   }
 
-
   ///Validar cadastro
   bool _validateAgendamento() {
     bool flag = true;
 
     String? erroCliente;
-    // Outras variáveis de erro, se quiser exibir no futuro
 
     // Validações
     if (_horaController.text.isEmpty) flag = false;
@@ -671,7 +682,6 @@ class _HomePageState extends State<HomePage> {
 
     return flag;
   }
-
 
   ///Inputs de Data, Hora e Min
   widgetDataCompleta(){
@@ -721,6 +731,5 @@ class _HomePageState extends State<HomePage> {
       date = DateTime.parse(agendamento!.updatedAt!);
       _dataController.text = Utils.formatarData(date.toString(), true);
     });
-
   }
 }

@@ -40,4 +40,6 @@ class AppColors {
   static const Color levelButtonTextMedio = darkGreen;
   static const Color levelButtonTextDificil = Color(0xFFE8891C);
   static final Color levelButtonTextPerito = darkRed;
+
+  static final Color levelRoxoNubank = Color(0xFF9A00FF);
 }
