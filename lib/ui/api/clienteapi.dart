@@ -1,4 +1,5 @@
 
+import 'package:app_agendamento_manicure/ui/dto/cliente_dto.dart';
 import 'package:app_agendamento_manicure/ui/models/cliente.dart';
 import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
@@ -12,6 +13,7 @@ class ClienteApi implements IClienteApi {
   BuildContext? _context;
   Configs _customDio = Configs();
   final URL = "/clientes";
+  final FILTRAR = '/filtrar';
 
   ClienteApi(BuildContext context) {
     _context = context;
@@ -89,5 +91,28 @@ class ClienteApi implements IClienteApi {
         },),
     );
     return response.statusCode == 200;
+  }
+
+  @override
+  Future<List<Cliente>> getListByFilter(ClienteDTO cliente) async {
+    var token = await Utils.recuperarToken(); // Pegue do localStorage, SharedPreferences, etc.
+    var response = await _customDio.dio.post(
+      URL+FILTRAR,
+      data: 	cliente.toJson(),
+      options: Options(
+        headers: {
+          'Authorization': 'Bearer $token',
+        },),);
+    if (response.statusCode == 200) {
+      var lista = response.data;
+      // Aqui você pode fazer o mapeamento de lista para objetos Agendamento
+      List<Cliente> clientes = (lista as List)
+          .map((json) => Cliente.fromJson(json))
+          .toList();
+
+      return clientes;
+    }
+    return [];
+
   }
 }

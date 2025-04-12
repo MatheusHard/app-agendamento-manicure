@@ -1,3 +1,4 @@
+import 'package:app_agendamento_manicure/ui/dto/cliente_dto.dart';
 import 'package:app_agendamento_manicure/ui/models/cliente.dart';
 import 'package:app_agendamento_manicure/ui/pages/pix_page.dart';
 import 'package:app_agendamento_manicure/ui/pages/screen_arguments/ScreenArgumentsUser.dart';
@@ -13,6 +14,7 @@ import 'package:mask_text_input_formatter/mask_text_input_formatter.dart';
 
 import '../api/clienteapi.dart';
 import '../enums/drawer_sections.dart';
+import '../models/user.dart';
 import 'home_page.dart';
 
 class ClientePage extends StatefulWidget {
@@ -223,7 +225,11 @@ class _ClientePageState extends State<ClientePage> {
 
   Future<void> carregarClientes() async {
     try {
-      final dados = await ClienteApi(context).getList(1, 1);
+
+      ClienteDTO filters = ClienteDTO();
+      filters.user = User(id: userLogado?.data.user.id);
+      final dados = await ClienteApi(context).getListByFilter(filters);
+
       setState(() {
         listaClientes = dados;
         isLoading = false;
