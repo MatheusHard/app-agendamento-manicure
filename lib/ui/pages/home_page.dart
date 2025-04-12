@@ -53,7 +53,7 @@ class _HomePageState extends State<HomePage> {
 
     carregarClientes();
     userLogado = widget.userLogado;
-    carregarAgendamentos();
+    carregarAgendamentos(userLogado);
     _initFocusNode();
     testeAdd();
     super.initState();
@@ -146,7 +146,7 @@ class _HomePageState extends State<HomePage> {
                 },
                 child: CardAgendamento(
                   title: agendamento.cliente?.name ?? "Sem nome",
-                  subtitle: agendamento.createdAt ?? "Sem data",
+                  subtitle: agendamento.updatedAt ?? "Sem data",
                   icon: agendamento.finalizado == true
                       ? Icons.check_circle
                       : Icons.schedule,
@@ -163,7 +163,7 @@ class _HomePageState extends State<HomePage> {
           onPressed: () async {
             _clearControllers();
             await _showDialogSaveAgendamento(context, userLogado!, false, null);
-            carregarAgendamentos(); // <- atualiza lista após fechar o dialog
+            carregarAgendamentos(userLogado); // <- atualiza lista após fechar o dialog
           },
           shape: const CircleBorder(),
           backgroundColor: Colors.green, // verde
@@ -332,18 +332,19 @@ class _HomePageState extends State<HomePage> {
     );
   }
 
-  Future<void> carregarAgendamentos() async {
+  Future<void> carregarAgendamentos(ScreenArgumentsUser? userLogado) async {
+
     try {
-      final dados = await AgendamentoApi(context).getList(1, 1, true);
-
-      AgendamentoDTO a = AgendamentoDTO();
-      a.user = User();
+      //final dados = await AgendamentoApi(context).getList(1, 1, true);
+      ///Filters
+      AgendamentoDTO a = AgendamentoDTO(cliente: Cliente(), user: User(id: userLogado?.data.user.id));
+      a.user = User(id: userLogado?.data.user.id);
       a.cliente = Cliente();
-      a.dataInicial = '2025-04-10';
-      a.dataFinal = '2025-04-10';
+      //a.dataInicial = Utils.getDataHora();
+      //a.dataFinal = Utils.getDataHora();
+      a.finalizado = false;
 
-
-      final listateste = await AgendamentoApi(context).getListByFilter(a);
+      final dados = await AgendamentoApi(context).getListByFilter(a);
       setState(() {
         listaAgendamentos = dados;
         isLoading = false;
@@ -384,6 +385,9 @@ class _HomePageState extends State<HomePage> {
    ///Dialog Cadastro/Edição Agendamento
   _showDialogSaveAgendamento(BuildContext context, ScreenArgumentsUser screenArgumentsUser, bool editar, Agendamento? agendamento) async {
 
+    var width = MediaQuery.of(context).size.width;
+    var height = MediaQuery.of(context).size.height;
+
     if(editar) _initEditar(agendamento);
 
     var isLoader = false; // <-- Fora do builder, controlado pelo setState do StatefulBuilder
@@ -393,9 +397,9 @@ class _HomePageState extends State<HomePage> {
         return StatefulBuilder(
           builder: (BuildContext context, StateSetter setState) {
             return AlertDialog(
-              title: Center(child: Text("Cadastro Agendamento")),
+              title: Center(child: Text("Cadastro Agendamento", style: AppTextStyles.textoSentimentoNegritoWhite(16,  context),)),
               titleTextStyle: AppTextStyles.titleCardVacina,
-              contentPadding: const EdgeInsets.only(left: 5, bottom: 0, right: 5, top: 0),
+              contentPadding: const EdgeInsets.only(left: 5, bottom: 0, right: 5, top: 25),
               content: Container(
                 decoration: BoxDecoration(
                   border: Border.all(color: AppColors.border),
@@ -456,7 +460,7 @@ class _HomePageState extends State<HomePage> {
                       setState(() {
                         isLoader = false;
                         Navigator.pop(context);
-                        carregarAgendamentos(); ///Relistar Agendamentos, após add/update
+                        carregarAgendamentos(userLogado); ///Relistar Agendamentos, após add/update
                       });
                     }
                   },
@@ -479,7 +483,6 @@ class _HomePageState extends State<HomePage> {
   Future<bool> _cadastrarAgendamento(Agendamento a, BuildContext context) async {
     return await AgendamentoApi(context).addAgendamento(a);
   }
-
   ///Add Cliente
   Future<bool> _atualizarAgendamento(Agendamento a, BuildContext context) async {
     return await AgendamentoApi(context).updateAgendamento(a);

@@ -3,6 +3,8 @@ import 'package:app_agendamento_manicure/ui/pages/utils/core/app_gradients.dart'
 import 'package:app_agendamento_manicure/ui/pages/utils/core/app_text_styles.dart';
 import 'package:app_agendamento_manicure/ui/pages/utils/metods/utils.dart';
 import 'package:flutter/material.dart';
+import 'dart:io' show Platform;
+import 'package:flutter/foundation.dart';
 
 import '../models/user.dart';
 
@@ -55,6 +57,13 @@ class _LoginPageState extends State<LoginPage> {
   @override
   Widget build(BuildContext context) {
 
+    double tamanho = kIsWeb ? 4 : 2; // Por exemplo: menor na web, maior no mobile
+
+    var width = MediaQuery.of(context).size.width;
+    var height = MediaQuery.of(context).size.height;
+
+    print('widt $width');
+
     ///Mudar cor do CheckBOx:
     Color getColor(Set<WidgetState> states) {
       const Set<WidgetState> interactiveStates = <WidgetState>{
@@ -65,21 +74,18 @@ class _LoginPageState extends State<LoginPage> {
       if (states.any(interactiveStates.contains)) {
         return Colors.blue;
       }
-      return Colors.red;
+      return Colors.green;
     }
-
-    var width = MediaQuery.of(context).size.width;
-    var height = MediaQuery.of(context).size.height;
 
     final logo = Hero(
         tag: 'hero',
         child:
 
         Padding(
-          padding: const EdgeInsets.all(35),
+          padding: EdgeInsets.all(50),
           child: Container(
             decoration: BoxDecoration(
-                borderRadius: BorderRadius.circular(50),
+                borderRadius: BorderRadius.circular(width / 8),
                 boxShadow:const [
                   BoxShadow(
                     color: Colors.grey,
@@ -92,6 +98,7 @@ class _LoginPageState extends State<LoginPage> {
               child: Image.asset(
                 'assets/images/esmalte_logo.jpg',
                 fit: BoxFit.cover,
+                width: width / tamanho,
               ),
             ),
           ),
@@ -172,11 +179,9 @@ class _LoginPageState extends State<LoginPage> {
             _isLoading.value = !_isLoading.value;
             _logar();
           }
-
       },
       child:   Container(
-
-        height: 60,
+       height: 60,
         decoration: BoxDecoration(
             gradient: AppGradients.petMacho,
             borderRadius: const BorderRadius.all(

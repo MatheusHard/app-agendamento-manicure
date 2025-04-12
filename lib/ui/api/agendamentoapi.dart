@@ -10,7 +10,7 @@ import 'interfaces/iagendamentoapi.dart';
 class AgendamentoApi implements IAgendamentoApi {
 
   BuildContext? _context;
-  Configs _customDio = Configs();
+  final Configs _customDio = Configs();
   final URL = '/agendamentos';
   final FILTRAR = '/filtrar';
 

@@ -45,7 +45,7 @@ class AppTextStyles {
       fontWeight: FontWeight.w600,
       fontSize:  MediaQuery.of(context).size.width / tamanho,
       letterSpacing: 0.0,
-      color: Colors.white,
+      color: Colors.black,
     );
   }
   static TextStyle titleAppBarUsuario(int numero, BuildContext context) {

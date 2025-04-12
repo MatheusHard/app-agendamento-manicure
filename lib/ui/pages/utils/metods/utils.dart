@@ -246,15 +246,9 @@ import 'package:shared_preferences/shared_preferences.dart';
       }
     }*/
     /***************DataHora***************/
-
-  static DateTime getDataHora(){
-  return DateTime.now();
-  }
-  static String getDataHoraDotNet(){
-    var now = DateTime.now();
-    var dateFormatted = DateFormat("yyyy-MM-ddTHH:mm:ss").format(now);
-    return dateFormatted;
-  }
+  static String getDataHora(){
+    return DateTime.now().toIso8601String();
+    }
   static DateTime? stringToDate(String dataHora){
     return DateTime.tryParse(dataHora);
   }
