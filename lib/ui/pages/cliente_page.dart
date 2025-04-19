@@ -1,14 +1,19 @@
+import 'dart:convert';
+import 'dart:io';
+
 import 'package:app_agendamento_manicure/ui/dto/cliente_dto.dart';
 import 'package:app_agendamento_manicure/ui/models/cliente.dart';
 import 'package:app_agendamento_manicure/ui/pages/pix_page.dart';
 import 'package:app_agendamento_manicure/ui/pages/screen_arguments/ScreenArgumentsUser.dart';
 import 'package:app_agendamento_manicure/ui/pages/utils/core/app_colors.dart';
 import 'package:app_agendamento_manicure/ui/pages/utils/core/app_gradients.dart';
+import 'package:app_agendamento_manicure/ui/pages/utils/core/app_images.dart';
 import 'package:app_agendamento_manicure/ui/pages/utils/core/app_text_styles.dart';
 import 'package:app_agendamento_manicure/ui/pages/utils/metods/utils.dart';
 import 'package:app_agendamento_manicure/ui/pages/widgets/card_cliente.dart';
 import 'package:app_agendamento_manicure/ui/pages/widgets/drawer/header_drawer.dart';
 import 'package:flutter/material.dart';
+import 'package:image_picker/image_picker.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'package:mask_text_input_formatter/mask_text_input_formatter.dart';
 
@@ -34,6 +39,9 @@ class _ClientePageState extends State<ClientePage> {
   var currentPage = DrawerSections.cliente;
   bool isLoading = true;
   List<Cliente> listaClientes = [];
+  File? _imagem;
+  var bytes;
+  final ImagePicker _picker = ImagePicker();
 
   ///Dados Cliente
   final _nameController = TextEditingController();
@@ -133,6 +141,7 @@ class _ClientePageState extends State<ClientePage> {
                 },
                 title: cliente.name ?? "",
                 subtitle: cliente.telephone ?? "",
+                photoname:   cliente.photoName != null ? '${Utils.URL_WEB_SERVICE}${Utils.URL_UPLOAD}${cliente.photoName}' : AppImages.semfoto,
                 icon: Icons.phone_forwarded,
               ),
             );
@@ -349,8 +358,11 @@ class _ClientePageState extends State<ClientePage> {
                                   widgetEmail(), ///Input Email
                                   widgetPhone(), ///Input Telefone
                                   Utils.sizedBox(10, 20),
+                                  widgetFoto(() => _tirarFoto(setState)),
+                                  Utils.sizedBox(10, 20),
                                   widgetContatos(cliente != null ? cliente.telephone! : ""), ///Buttons Encaminhar Telefone e Whattzap
-                                  ],
+
+                                ],
                               ),
                             ),
                           ),
@@ -371,7 +383,7 @@ class _ClientePageState extends State<ClientePage> {
                       setState(() {
                         isLoader = true;
                       });
-                      Cliente c = _generateCliente();
+                      Cliente c = await _generateCliente();
                       if(!editar) {
                         await _cadastrarCliente(c, argsUser.data.user.id, context);
                       }else {
@@ -381,7 +393,7 @@ class _ClientePageState extends State<ClientePage> {
                        setState(() {
                         isLoader = false;
                         Navigator.pop(context);
-                        carregarClientes(); ///Relistar Clientes, após add/update
+                        carregarClientes(); ///Lista novamente Clientes, após add/update
                       });
                     }
                   },
@@ -462,6 +474,70 @@ class _ClientePageState extends State<ClientePage> {
       return null;
     },);
   }
+
+  widgetFoto(void Function() tirarFoto) {
+    return Row(
+      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+
+      children: [
+        GestureDetector(
+          onTap: tirarFoto,
+          child: Container(
+            decoration: BoxDecoration(
+                borderRadius: BorderRadius
+                    .circular(50)),
+            height: 70,
+            width: 70,
+            child: Stack(
+              clipBehavior: Clip.none,
+              children: [
+
+                const Center(child:
+                Icon(
+                  Icons.camera_alt_rounded,
+                  color: AppColors.black,
+                  size: 35,),),
+
+                Align(
+                    alignment: const Alignment(
+                        0, 2.0),
+                    child:
+                    Padding(
+                      padding: const EdgeInsets
+                          .only(bottom: 20),
+                      child: Text("Camera",
+                        style: AppTextStyles
+                            .bodyBold,),
+                    )
+                )
+              ],
+            ),
+          )
+        ),
+        if (_imagem != null)
+          Image.file(
+            _imagem!,
+            key: ValueKey(_imagem!.path), // força reconstrução
+            width: 50,
+            height: 50,
+            fit: BoxFit.cover,
+          ),
+      ],
+    );
+  }
+
+
+  Future<void> _tirarFoto(StateSetter dialogSetState) async {
+    final XFile? foto = await _picker.pickImage(source: ImageSource.camera);
+
+    if (foto != null) {
+      dialogSetState(() {
+        _imagem = File(foto.path);
+        bytes =_imagem?.readAsBytes();
+      });
+    }
+  }
+
   ///Input Cpf
   /*widgetCpf(){
     return TextFormField(
@@ -492,24 +568,32 @@ class _ClientePageState extends State<ClientePage> {
     _cpfController.clear();
     _phoneController.clear();
     _emailController.clear();
+    _imagem = null;
   }
   ///Validar cadastro
   bool _validateCliente() {
+
     bool flag = true;
     if(_nameController.text.isEmpty) return false;
     if(_phoneController.text.isEmpty) return false;
     if(_emailController.text.isEmpty) return false;
+    //if(_imagem == null) return false;
+
     return flag;
   }
  ///Retornar um cliente
- Cliente _generateCliente(){
-    Cliente cliente = Cliente();
+ Future<Cliente> _generateCliente() async {
+
+   Cliente cliente = Cliente();
     cliente.name = _nameController.text;
     cliente.telephone = _phoneController.text;
     cliente.cpf = _cpfController.text;
     cliente.email = _emailController.text;
     cliente.createdAt = DateTime.now().toIso8601String();
     cliente.updatedAt = DateTime.now().toIso8601String();
+    cliente.imagemBase64 = await Utils.base64String(bytes);
+    cliente.photoName =  "foto_${userLogado?.data.user.id}${DateTime.now().millisecondsSinceEpoch}.jpg";
+
   return cliente;
 }
   ///Add Cliente
@@ -533,33 +617,57 @@ class _ClientePageState extends State<ClientePage> {
     return Row(
       children: [
         const Text("Contatos: "),
-        // Ícone de telefone
-        IconButton(
-          icon: const Icon(Icons.phone_in_talk),
-          onPressed: () async {
-            final Uri url = Uri(scheme: 'tel', path: phone);
-            if (await canLaunchUrl(url)) {
+        const SizedBox(width: 15),
+        GestureDetector(
+               onTap: () async {
+              // Remove caracteres inválidos do número
+              final String cleanedPhone = phone.replaceAll(RegExp(r'[^\d]'), '');
+              final Uri url = Uri.parse('https://wa.me/55$cleanedPhone');
+              if (await canLaunchUrl(url)) {
               await launchUrl(url, mode: LaunchMode.externalApplication);
-            } else {
-              debugPrint("Não foi possível abrir o discador.");
-            }
-          },
-        ),
-        const SizedBox(width: 10),
-        // Ícone do WhatsApp
-        IconButton(
-          icon: const Icon(Icons.chat),
-          onPressed: () async {
-            // Remove caracteres inválidos do número
-            final String cleanedPhone = phone.replaceAll(RegExp(r'[^\d]'), '');
-            final Uri url = Uri.parse('https://wa.me/55$cleanedPhone');
-            if (await canLaunchUrl(url)) {
-              await launchUrl(url, mode: LaunchMode.externalApplication);
-            } else {
+              } else {
               debugPrint("Não foi possível abrir o WhatsApp.");
-            }
-          },
+              }
+        },
+         child: Container(
+             width: 30,
+             height: 30,
+             decoration: BoxDecoration(
+                 borderRadius: BorderRadius.circular(10),
+                 image:  DecorationImage(
+                     image: AssetImage(
+                       AppImages.zap
+                     )
+                 )
+             ),
+           )
+       ),
+        const SizedBox(width: 25),
+        ///Zap
+        GestureDetector(
+            onTap: () async {
+              final Uri url = Uri(scheme: 'tel', path: phone);
+              if (await canLaunchUrl(url)) {
+                await launchUrl(url, mode: LaunchMode.externalApplication);
+              } else {
+                debugPrint("Não foi possível abrir o discador.");
+              }
+            },
+            child: Container(
+              width: 30,
+              height: 30,
+              decoration: BoxDecoration(
+                //color: Colors.blue,
+                  borderRadius: BorderRadius.circular(10),
+                     image:  DecorationImage(
+                    image: AssetImage(
+                          AppImages.phone
+                      )
+                  )
+              ),
+            )
         ),
+
       ],
     );
   }

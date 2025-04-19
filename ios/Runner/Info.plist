@@ -7,6 +7,8 @@
       <string>sms</string>
       <string>tel</string>
     </array>
+    <key>NSCameraUsageDescription</key>
+    <string>Precisamos da câmera para tirar fotos.</string>
 	<key>CFBundleDevelopmentRegion</key>
 	<string>$(DEVELOPMENT_LANGUAGE)</string>
 	<key>CFBundleDisplayName</key>

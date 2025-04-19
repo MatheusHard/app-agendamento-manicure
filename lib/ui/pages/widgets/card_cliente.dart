@@ -8,6 +8,7 @@ class CardCliente extends StatelessWidget {
   final String subtitle;
   final IconData icon;
   final VoidCallback? onTap; // Callback de clique
+  final String photoname;
 
   const CardCliente({
     Key? key,
@@ -15,7 +16,7 @@ class CardCliente extends StatelessWidget {
     required this.subtitle,
     required this.icon,
     this.onTap,
-
+    required this.photoname,
   }) : super(key: key);
 
   @override
@@ -25,9 +26,9 @@ class CardCliente extends StatelessWidget {
         onTap: onTap, // Ação de clique
         title: Text(title),
         subtitle: Text(subtitle),
-        leading: const CircleAvatar(
+        leading: CircleAvatar(
           backgroundImage: NetworkImage(
-            "https://images.unsplash.com/photo-1547721064-da6cfb341d50",
+            photoname,
           ),
         ),
         trailing: Icon(icon),

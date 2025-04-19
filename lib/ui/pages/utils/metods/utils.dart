@@ -4,16 +4,15 @@ import 'dart:io';
 import 'dart:typed_data';
 import 'package:app_agendamento_manicure/ui/models/user.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter/widgets.dart';
-import 'package:intl/date_symbol_data_file.dart';
-import 'package:intl/intl.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
   class Utils {
 
   static const String _boolKey = 'isLoggedIn';
   ///Servidor
-  static String URL_WEB_SERVICE = "http://192.99.158.20:80/api/";
+  static String URL_WEB_SERVICE = "http://192.168.0.3:8080/";
+  static String URL_UPLOAD = "uploads/";
+
   ///Local
   //static String URL_WEB_SERVICE = "http://192.168.0.7:5001/api/";
 
@@ -362,8 +361,8 @@ import 'package:shared_preferences/shared_preferences.dart';
     return preferences.getString(IMG_KEY);
   }*/
 
-  static String base64String(Uint8List bytes){
-    return base64Encode(bytes);
+  static Future<String> base64String(Future<Uint8List> bytes) async {
+    return base64Encode(await bytes);
   }
 
   static String formatarDateTime(DateTime? data){

@@ -16,5 +16,8 @@ class AppImages {
   static String get icons_gallery_80 => "assets/images/icons_gallery_80.png";
   static String get no_camera_icon => "assets/images/no_camera_icon.png";
   static String get no_image => "assets/images/no_image.png";
+  static String get zap => "assets/images/whatsapp.png";
+  static String get phone => "assets/images/phonecall.png";
+  static String get semfoto => "http://192.168.0.3:8080/uploads/semfoto.png";
 
 }
