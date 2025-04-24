@@ -3,14 +3,14 @@ import 'dart:io';
 
 import 'package:app_agendamento_manicure/ui/dto/cliente_dto.dart';
 import 'package:app_agendamento_manicure/ui/models/cliente.dart';
-import 'package:app_agendamento_manicure/ui/pages/pix_page.dart';
 import 'package:app_agendamento_manicure/ui/pages/screen_arguments/ScreenArgumentsUser.dart';
 import 'package:app_agendamento_manicure/ui/pages/utils/core/app_colors.dart';
 import 'package:app_agendamento_manicure/ui/pages/utils/core/app_gradients.dart';
 import 'package:app_agendamento_manicure/ui/pages/utils/core/app_images.dart';
 import 'package:app_agendamento_manicure/ui/pages/utils/core/app_text_styles.dart';
 import 'package:app_agendamento_manicure/ui/pages/utils/metods/utils.dart';
-import 'package:app_agendamento_manicure/ui/pages/widgets/card_cliente.dart';
+import 'package:app_agendamento_manicure/ui/pages/widgets/card/card_cliente.dart';
+import 'package:app_agendamento_manicure/ui/pages/widgets/drawer/drawer_sections.dart';
 import 'package:app_agendamento_manicure/ui/pages/widgets/drawer/header_drawer.dart';
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
@@ -18,6 +18,7 @@ import 'package:url_launcher/url_launcher.dart';
 import 'package:mask_text_input_formatter/mask_text_input_formatter.dart';
 
 import '../api/clienteapi.dart';
+import '../api/configurations/dio/configs.dart';
 import '../enums/drawer_sections.dart';
 import '../models/user.dart';
 import 'home_page.dart';
@@ -36,7 +37,7 @@ class _ClientePageState extends State<ClientePage> {
   ScreenArgumentsUser? userLogado;
   final GlobalKey<ScaffoldState> key = GlobalKey(); // Create a key
   final GlobalKey<FormState> _formKey = GlobalKey<FormState>();
-  var currentPage = DrawerSections.cliente;
+  DrawerSections currentPage = DrawerSections.cliente;
   bool isLoading = true;
   List<Cliente> listaClientes = [];
   File? _imagem;
@@ -48,6 +49,7 @@ class _ClientePageState extends State<ClientePage> {
   final _phoneController = TextEditingController();
   final _emailController = TextEditingController();
   final _cpfController = TextEditingController();
+  Configs _customDio = Configs();
 
   late FocusNode _myFocusNodeName;
   late FocusNode _myFocusNodePhone;
@@ -87,7 +89,16 @@ class _ClientePageState extends State<ClientePage> {
                 ///Header Drawer
                 MeuHeadDrawer(userLogado),
                 ///Body Drawer
-                _meuDrawerList(userLogado),
+                //_meuDrawerList(userLogado),
+                MeuDrawerList(
+                  currentPage: currentPage,
+                  onSectionSelected: (section) {
+                    setState(() {
+                      currentPage = section;
+                    });
+                  },
+                  usuario: userLogado,
+                ),
               ],
             ),
           )
@@ -141,7 +152,9 @@ class _ClientePageState extends State<ClientePage> {
                 },
                 title: cliente.name ?? "",
                 subtitle: cliente.telephone ?? "",
-                photoname:   cliente.photoName != null ? '${Utils.URL_WEB_SERVICE}${Utils.URL_UPLOAD}${cliente.photoName}' : AppImages.semfoto,
+                photoname: cliente.photoName != null ?
+                                  '${_customDio.dio.options.baseUrl}/${Utils.URL_UPLOAD}${cliente.photoName}' :
+                                  '${_customDio.dio.options.baseUrl}/${Utils.URL_UPLOAD}${AppImages.semfoto}',
                 icon: Icons.phone_forwarded,
               ),
             );
@@ -234,11 +247,10 @@ class _ClientePageState extends State<ClientePage> {
 
   Future<void> carregarClientes() async {
     try {
-
+      ///Filters
       ClienteDTO filters = ClienteDTO();
       filters.user = User(id: userLogado?.data.user.id);
       final dados = await ClienteApi(context).getListByFilter(filters);
-
       setState(() {
         listaClientes = dados;
         isLoading = false;
@@ -249,72 +261,6 @@ class _ClientePageState extends State<ClientePage> {
         isLoading = false;
       });
     }
-  }
-  ///MenuDrawer:
-  _meuDrawerList(ScreenArgumentsUser? usuario){
-    return Container(
-      padding: const EdgeInsets.only(top: 15),
-      child: Column(
-        children: [
-          menuItem(0, "DashBoard", Icons.dashboard_outlined, currentPage == DrawerSections.dashboard ? true : false, usuario),
-          menuItem(1, "Clientes", Icons.people, currentPage == DrawerSections.cliente ? true : false, usuario),
-          menuItem(2, "Perfil", Icons.person, currentPage == DrawerSections.perfil ? true : false, usuario),
-          menuItem(3, "QrCode", Icons.qr_code, currentPage == DrawerSections.qrcode ? true : false, usuario),
-          const Divider(),
-          menuItem(4, "Sair", Icons.exit_to_app, currentPage == DrawerSections.exit ? true : false, usuario),
-        ],
-      ),
-    );
-  }
-  ///Menu Item:
-  menuItem(int id, String title, IconData icon, bool selected, ScreenArgumentsUser? usuario){
-    return Material(
-        color: selected ? Colors.grey[300]: Colors.transparent,
-        child: InkWell(
-          onTap: (){
-            Navigator.pop(context);
-            setState(() {
-              switch(id){
-                case 0:
-                  currentPage = DrawerSections.dashboard;
-                  Navigator.push(
-                      context,
-                      MaterialPageRoute(builder: (context) => HomePage(usuario)));
-                  break;
-                case 1:
-                  currentPage = DrawerSections.cliente;
-                  Navigator.push(
-                      context,
-                      MaterialPageRoute(builder: (context) => ClientePage(usuario)));
-                  break;
-                case 2:
-                  currentPage = DrawerSections.perfil;
-                  /* Navigator.push(
-                      context,
-                      MaterialPageRoute(builder: (context) => PerfilPage(usuario)));*/
-                  break;
-                case 3:
-                  currentPage = DrawerSections.qrcode;
-                  Navigator.push(context, MaterialPageRoute(builder: (context) => PixPage()));
-                  break;
-                case 4:
-                  currentPage = DrawerSections.exit;
-                  //_dialogSair();
-                  break;
-              }
-            });
-          },
-          child: Padding(
-              padding: const EdgeInsets.all(15.0),
-              child: Row(
-                children:  [
-                  Expanded(child: Icon(icon, size: 20, color: Colors.black,),),
-                  Expanded(flex: 3, child: Text(title, style: const TextStyle(color: Colors.black, fontSize: 16),))
-                ],
-              )),
-
-        )
-    );
   }
 
   ///Add Cliente
@@ -526,6 +472,64 @@ class _ClientePageState extends State<ClientePage> {
     );
   }
 
+  widgetContatos(String phone) {
+    return Row(
+      children: [
+        const Text("Contatos: "),
+        const SizedBox(width: 15),
+        GestureDetector(
+            onTap: () async {
+              // Remove caracteres inválidos do número
+              final String cleanedPhone = phone.replaceAll(RegExp(r'[^\d]'), '');
+              final Uri url = Uri.parse('https://wa.me/55$cleanedPhone');
+              if (await canLaunchUrl(url)) {
+                await launchUrl(url, mode: LaunchMode.externalApplication);
+              } else {
+                debugPrint("Não foi possível abrir o WhatsApp.");
+              }
+            },
+            child: Container(
+              width: 30,
+              height: 30,
+              decoration: BoxDecoration(
+                  borderRadius: BorderRadius.circular(10),
+                  image:  DecorationImage(
+                      image: AssetImage(
+                          AppImages.zap
+                      )
+                  )
+              ),
+            )
+        ),
+        const SizedBox(width: 25),
+        ///Zap
+        GestureDetector(
+            onTap: () async {
+              final Uri url = Uri(scheme: 'tel', path: phone);
+              if (await canLaunchUrl(url)) {
+                await launchUrl(url, mode: LaunchMode.externalApplication);
+              } else {
+                debugPrint("Não foi possível abrir o discador.");
+              }
+            },
+            child: Container(
+              width: 30,
+              height: 30,
+              decoration: BoxDecoration(
+                //color: Colors.blue,
+                  borderRadius: BorderRadius.circular(10),
+                  image:  DecorationImage(
+                      image: AssetImage(
+                          AppImages.phone
+                      )
+                  )
+              ),
+            )
+        ),
+
+      ],
+    );
+  }
 
   Future<void> _tirarFoto(StateSetter dialogSetState) async {
     final XFile? foto = await _picker.pickImage(source: ImageSource.camera);
@@ -538,24 +542,6 @@ class _ClientePageState extends State<ClientePage> {
     }
   }
 
-  ///Input Cpf
-  /*widgetCpf(){
-    return TextFormField(
-        enabled: true,
-        keyboardType: TextInputType.number,
-        controller: _cpfController,
-        focusNode: _myFocusNodeCpf,
-        decoration: const InputDecoration(
-            hintText: 'Cpf',
-            icon: Icon(Icons.credit_card, color: Colors.blue,)
-        ),
-        validator: (value) {
-        if (value == null || value.isEmpty) {
-          return 'Cpf obrigatório';
-        }
-      return null;
-    },);
-  }*/
   ///Focus dos inputs
   _initFocusNode(){
      _myFocusNodeName = FocusNode();
@@ -613,62 +599,4 @@ class _ClientePageState extends State<ClientePage> {
     _emailController.text = cliente.email ?? "";
   }
 
-  Widget widgetContatos(String phone) {
-    return Row(
-      children: [
-        const Text("Contatos: "),
-        const SizedBox(width: 15),
-        GestureDetector(
-               onTap: () async {
-              // Remove caracteres inválidos do número
-              final String cleanedPhone = phone.replaceAll(RegExp(r'[^\d]'), '');
-              final Uri url = Uri.parse('https://wa.me/55$cleanedPhone');
-              if (await canLaunchUrl(url)) {
-              await launchUrl(url, mode: LaunchMode.externalApplication);
-              } else {
-              debugPrint("Não foi possível abrir o WhatsApp.");
-              }
-        },
-         child: Container(
-             width: 30,
-             height: 30,
-             decoration: BoxDecoration(
-                 borderRadius: BorderRadius.circular(10),
-                 image:  DecorationImage(
-                     image: AssetImage(
-                       AppImages.zap
-                     )
-                 )
-             ),
-           )
-       ),
-        const SizedBox(width: 25),
-        ///Zap
-        GestureDetector(
-            onTap: () async {
-              final Uri url = Uri(scheme: 'tel', path: phone);
-              if (await canLaunchUrl(url)) {
-                await launchUrl(url, mode: LaunchMode.externalApplication);
-              } else {
-                debugPrint("Não foi possível abrir o discador.");
-              }
-            },
-            child: Container(
-              width: 30,
-              height: 30,
-              decoration: BoxDecoration(
-                //color: Colors.blue,
-                  borderRadius: BorderRadius.circular(10),
-                     image:  DecorationImage(
-                    image: AssetImage(
-                          AppImages.phone
-                      )
-                  )
-              ),
-            )
-        ),
-
-      ],
-    );
-  }
 }

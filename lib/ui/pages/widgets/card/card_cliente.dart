@@ -1,7 +1,6 @@
 
 import 'package:flutter/material.dart';
 
-import '../utils/metods/utils.dart';
 
 class CardCliente extends StatelessWidget {
   final String title;

@@ -10,7 +10,8 @@ import 'package:app_agendamento_manicure/ui/pages/utils/core/app_colors.dart';
 import 'package:app_agendamento_manicure/ui/pages/utils/core/app_gradients.dart';
 import 'package:app_agendamento_manicure/ui/pages/utils/core/app_text_styles.dart';
 import 'package:app_agendamento_manicure/ui/pages/utils/metods/utils.dart';
-import 'package:app_agendamento_manicure/ui/pages/widgets/card_agendamento.dart';
+import 'package:app_agendamento_manicure/ui/pages/widgets/card/card_agendamento.dart';
+import 'package:app_agendamento_manicure/ui/pages/widgets/drawer/drawer_sections.dart';
 import 'package:app_agendamento_manicure/ui/pages/widgets/drawer/header_drawer.dart';
 import 'package:dropdown_search/dropdown_search.dart';
 import 'package:flutter/material.dart';
@@ -97,7 +98,15 @@ class _HomePageState extends State<HomePage> {
                   ///Header Drawer
                   MeuHeadDrawer(userLogado),
                   ///Body Drawer
-                  _meuDrawerList(userLogado),
+                  MeuDrawerList(
+                    currentPage: currentPage,
+                    onSectionSelected: (section) {
+                      setState(() {
+                        currentPage = section;
+                      });
+                    },
+                    usuario: userLogado,
+                  ),
                 ],
               ),
             )
