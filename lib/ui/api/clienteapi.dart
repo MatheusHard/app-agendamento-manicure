@@ -85,7 +85,9 @@ class ClienteApi implements IClienteApi {
         "deletado": cliente.deletado,
         "user": {
           "id":  user_id
-        }
+        },
+        "photoName": cliente.photoName,
+        "imagemBase64": cliente.imagemBase64
       },
       options: Options(
         headers: {

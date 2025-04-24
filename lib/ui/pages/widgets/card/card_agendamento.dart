@@ -1,18 +1,23 @@
 
 import 'package:flutter/material.dart';
 
+import '../../../api/configurations/dio/configs.dart';
+import '../../utils/core/app_images.dart';
 import '../../utils/metods/utils.dart';
 
 class CardAgendamento extends StatelessWidget {
   final String title;
   final String subtitle;
+  final String? urlFotoCliente;
   final IconData icon;
   final VoidCallback? onTap; // Callback de clique
+  final Configs _customDio = Configs();
 
-  const CardAgendamento({
+  CardAgendamento({
     Key? key,
     required this.title,
     required this.subtitle,
+    required this.urlFotoCliente,
     required this.icon,
     this.onTap,
 
@@ -25,10 +30,10 @@ class CardAgendamento extends StatelessWidget {
         onTap: onTap, // Ação de clique
         title: Text(title),
         subtitle: Text(Utils.formatarData(subtitle, false)),
-        leading: const CircleAvatar(
-          backgroundImage: NetworkImage(
-            "https://images.unsplash.com/photo-1547721064-da6cfb341d50",
-          ),
+        leading: CircleAvatar(
+          backgroundImage:  urlFotoCliente != null ?
+                    NetworkImage('${_customDio.dio.options.baseUrl}/${Utils.URL_UPLOAD}$urlFotoCliente') :
+                    AssetImage(AppImages.semfoto)
         ),
         trailing: Icon(icon),
       ),

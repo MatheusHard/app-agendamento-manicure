@@ -4,9 +4,9 @@
     <uses-feature android:name="android.hardware.camera" />
 
     <application
-        android:label="app_agendamento_manicure"
+        android:label="Manicure"
         android:name="${applicationName}"
-        android:icon="@mipmap/ic_launcher">
+        android:icon="@mipmap/esmalte_icon">
         <activity
             android:name=".MainActivity"
             android:exported="true"

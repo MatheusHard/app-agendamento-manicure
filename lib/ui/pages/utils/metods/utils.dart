@@ -10,7 +10,6 @@ import 'package:shared_preferences/shared_preferences.dart';
 
   static const String _boolKey = 'isLoggedIn';
   ///Servidor
-  static String URL_WEB_SERVICE = "https://melodious-beauty-production.up.railway.app/";
   static String URL_UPLOAD = "uploads/";
 
   ///Local

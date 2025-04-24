@@ -1,5 +1,9 @@
 
+import 'package:app_agendamento_manicure/ui/pages/utils/core/app_images.dart';
 import 'package:flutter/material.dart';
+
+import '../../../api/configurations/dio/configs.dart';
+import '../../utils/metods/utils.dart';
 
 
 class CardCliente extends StatelessWidget {
@@ -7,9 +11,10 @@ class CardCliente extends StatelessWidget {
   final String subtitle;
   final IconData icon;
   final VoidCallback? onTap; // Callback de clique
-  final String photoname;
+  final String? photoname;
+  final Configs _customDio = Configs();
 
-  const CardCliente({
+  CardCliente({
     Key? key,
     required this.title,
     required this.subtitle,
@@ -26,9 +31,9 @@ class CardCliente extends StatelessWidget {
         title: Text(title),
         subtitle: Text(subtitle),
         leading: CircleAvatar(
-          backgroundImage: NetworkImage(
-            photoname,
-          ),
+          backgroundImage: photoname != null ?
+                              NetworkImage('${_customDio.dio.options.baseUrl}/${Utils.URL_UPLOAD}$photoname') :
+                              AssetImage(AppImages.semfoto),
         ),
         trailing: Icon(icon),
       ),

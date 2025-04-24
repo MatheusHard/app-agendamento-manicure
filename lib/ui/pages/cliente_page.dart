@@ -9,6 +9,7 @@ import 'package:app_agendamento_manicure/ui/pages/utils/core/app_gradients.dart'
 import 'package:app_agendamento_manicure/ui/pages/utils/core/app_images.dart';
 import 'package:app_agendamento_manicure/ui/pages/utils/core/app_text_styles.dart';
 import 'package:app_agendamento_manicure/ui/pages/utils/metods/utils.dart';
+import 'package:app_agendamento_manicure/ui/pages/widgets/appbar/app_bar.dart';
 import 'package:app_agendamento_manicure/ui/pages/widgets/card/card_cliente.dart';
 import 'package:app_agendamento_manicure/ui/pages/widgets/drawer/drawer_sections.dart';
 import 'package:app_agendamento_manicure/ui/pages/widgets/drawer/header_drawer.dart';
@@ -49,8 +50,6 @@ class _ClientePageState extends State<ClientePage> {
   final _phoneController = TextEditingController();
   final _emailController = TextEditingController();
   final _cpfController = TextEditingController();
-  Configs _customDio = Configs();
-
   late FocusNode _myFocusNodeName;
   late FocusNode _myFocusNodePhone;
   late FocusNode _myFocusNodeEmail;
@@ -80,7 +79,11 @@ class _ClientePageState extends State<ClientePage> {
     return Scaffold(
       key: key,
       ///AppBar
-      appBar: _appBar(width, userLogado),
+      //appBar:  _appBar(width, userLogado),
+      appBar: CustomAppBarUsuario(
+          width: width,
+          usuarioLogado: userLogado,
+          scaffoldKey: key),
       ///Drawer
       drawer:  Drawer(
           child: SingleChildScrollView(
@@ -152,9 +155,7 @@ class _ClientePageState extends State<ClientePage> {
                 },
                 title: cliente.name ?? "",
                 subtitle: cliente.telephone ?? "",
-                photoname: cliente.photoName != null ?
-                                  '${_customDio.dio.options.baseUrl}/${Utils.URL_UPLOAD}${cliente.photoName}' :
-                                  '${_customDio.dio.options.baseUrl}/${Utils.URL_UPLOAD}${AppImages.semfoto}',
+                photoname: cliente.photoName,
                 icon: Icons.phone_forwarded,
               ),
             );

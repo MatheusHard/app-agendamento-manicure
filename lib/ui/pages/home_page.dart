@@ -8,13 +8,16 @@ import 'package:app_agendamento_manicure/ui/pages/pix_page.dart';
 import 'package:app_agendamento_manicure/ui/pages/screen_arguments/ScreenArgumentsUser.dart';
 import 'package:app_agendamento_manicure/ui/pages/utils/core/app_colors.dart';
 import 'package:app_agendamento_manicure/ui/pages/utils/core/app_gradients.dart';
+import 'package:app_agendamento_manicure/ui/pages/utils/core/app_images.dart';
 import 'package:app_agendamento_manicure/ui/pages/utils/core/app_text_styles.dart';
 import 'package:app_agendamento_manicure/ui/pages/utils/metods/utils.dart';
+import 'package:app_agendamento_manicure/ui/pages/widgets/appbar/app_bar.dart';
 import 'package:app_agendamento_manicure/ui/pages/widgets/card/card_agendamento.dart';
 import 'package:app_agendamento_manicure/ui/pages/widgets/drawer/drawer_sections.dart';
 import 'package:app_agendamento_manicure/ui/pages/widgets/drawer/header_drawer.dart';
 import 'package:dropdown_search/dropdown_search.dart';
 import 'package:flutter/material.dart';
+import '../api/configurations/dio/configs.dart';
 import '../models/user.dart';
 import 'cliente_page.dart';
 
@@ -38,6 +41,7 @@ class _HomePageState extends State<HomePage> {
   List<Cliente> listaClientes = [];
   Cliente? clienteSelected;
   DateTime date = DateTime.now();
+  final Configs _customDio = Configs();
 
   bool isLoading = true;
   final _observacaoController = TextEditingController();
@@ -90,7 +94,10 @@ class _HomePageState extends State<HomePage> {
       },
       child: Scaffold(
         key: key,
-        appBar: _appBar(width, userLogado),
+        appBar: CustomAppBarUsuario(
+            width: width,
+            usuarioLogado: userLogado,
+            scaffoldKey: key),
         drawer:  Drawer(
             child: SingleChildScrollView(
               child: Column(
@@ -156,6 +163,7 @@ class _HomePageState extends State<HomePage> {
                 child: CardAgendamento(
                   title: agendamento.cliente?.name ?? "Sem nome",
                   subtitle: agendamento.updatedAt ?? "Sem data",
+                  urlFotoCliente: agendamento.cliente?.photoName,
                   icon: agendamento.finalizado == true
                       ? Icons.check_circle
                       : Icons.schedule,
@@ -203,148 +211,13 @@ class _HomePageState extends State<HomePage> {
           );
     }
 
-  ///App Bar
-  _appBar(double width, ScreenArgumentsUser? usuarioLogado){
-
-    return AppBar(
-      toolbarHeight: 70,
-      elevation: 0.0,
-      flexibleSpace: Container(
-        height: width / 3.5,
-        decoration:  const BoxDecoration(
-          gradient: AppGradients.petMacho,
-          color: Colors.orange,
-          boxShadow:  [
-            BoxShadow(blurRadius: 50.0)
-          ],
-
-        ),
-      ),
-      actions: [
-        Row(
-          mainAxisAlignment: MainAxisAlignment.start,
-          crossAxisAlignment: CrossAxisAlignment.center,
-
-          children: [
-            SizedBox(width: width /10,),
-            ///Foto:
-            ClipRRect(
-              borderRadius: BorderRadius.circular(50),
-              child:  Image.asset(
-                ///TODO Imagem do usuario
-                'assets/images/usuario.png',
-                height: MediaQuery.of(context).size.width / 10,
-                //   width: MediaQuery.of(context).size.width / 10,
-              ),
-            ),
-            const SizedBox(
-              width: 25,
-            ),
-            ///Nome
-            SizedBox(
-              height: (MediaQuery.of(context).size.width / 10) - 17,
-              // width: MediaQuery.of(context).size.width / 10,
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Expanded(child: Text('''Olá ${usuarioLogado?.data.user.username}''' , style: AppTextStyles.titleAppBarUsuario(25, context),)),
-                ],),
-            )
-          ],
-        ),
-        _sizedBox(10)
-      ],
-      leadingWidth: 220,
-      leading: GestureDetector(
-        onTap: () => key.currentState!.openDrawer(),
-        ///key.currentState?.openEndDrawer();
-        child:  Row(
-          children:  [
-            _sizedBox(10),
-            const Icon(Icons.menu, color: Colors.white),
-          ],
-        ),
-      ),
-    );
-  }
-  _sizedBox(double width){
-    return SizedBox(
-      width: width,
-    );
-  }
-  /*final tabs = [
-    Container(child: Text("HOme"),),
-    Padding( padding: const EdgeInsets.only( left:8.0, right: 8.0), child: Container(  color:
-    AppColors.levelButtonTextFacil,)),
-    Container()
-  ];*/
-
   getBody() {
     return (_currentIndex == 0) ? HomePage(userLogado) : Container();
-  }
-  ///MenuDrawer:
-  _meuDrawerList(ScreenArgumentsUser? usuario){
-    return Container(
-      padding: const EdgeInsets.only(top: 15),
-      child: Column(
-        children: [
-          menuItem(0, "DashBoard", Icons.dashboard_outlined, currentPage == DrawerSections.dashboard ? true : false, usuario),
-          menuItem(1, "Clientes", Icons.people, currentPage == DrawerSections.cliente ? true : false, usuario),
-          menuItem(2, "Perfil", Icons.person, currentPage == DrawerSections.perfil ? true : false, usuario),
-          menuItem(3, "QrCode", Icons.qr_code, currentPage == DrawerSections.qrcode ? true : false, usuario),
-          const Divider(),
-          menuItem(4, "Sair", Icons.exit_to_app, currentPage == DrawerSections.exit ? true : false, usuario),
-        ],
-      ),
-    );
-  }
-  ///Menu Item:
-  menuItem(int id, String title, IconData icon, bool selected, ScreenArgumentsUser? usuario){
-    return Material(
-        color: selected ? Colors.grey[300]: Colors.transparent,
-        child: InkWell(
-          onTap: (){
-            Navigator.pop(context);
-            setState(() {
-              switch(id){
-                case 0:
-                  currentPage = DrawerSections.dashboard;
-                  break;
-                case 1:
-                  Navigator.push(context, MaterialPageRoute(builder: (context) => ClientePage(usuario)));
-                  break;
-                case 2:
-                  currentPage = DrawerSections.perfil;
-                  /*Navigator.push(context, MaterialPageRoute(builder: (context) => PerfilPage(usuario)));*/
-                  break;
-                case 3:
-                  currentPage = DrawerSections.qrcode;
-                  Navigator.push(context, MaterialPageRoute(builder: (context) => PixPage()));
-                  break;
-                case 4:
-                  currentPage = DrawerSections.exit;
-                  _dialogSair();
-                  break;
-              }
-            });
-          },
-          child: Padding(
-              padding: const EdgeInsets.all(15.0),
-              child: Row(
-                children:  [
-                  Expanded(child: Icon(icon, size: 20, color: Colors.black,),),
-                  Expanded(flex: 3, child: Text(title, style: const TextStyle(color: Colors.black, fontSize: 16),))
-                ],
-              )),
-
-        )
-    );
   }
 
   Future<void> carregarAgendamentos(ScreenArgumentsUser? userLogado) async {
 
     try {
-      //final dados = await AgendamentoApi(context).getList(1, 1, true);
       ///Filters
       AgendamentoDTO a = AgendamentoDTO(cliente: Cliente(), user: User(id: userLogado?.data.user.id));
       a.user = User(id: userLogado?.data.user.id);
@@ -429,12 +302,10 @@ class _HomePageState extends State<HomePage> {
                               child: Column(
                                 mainAxisAlignment: MainAxisAlignment.start,
                                 children: [
-
                                   widgetClientes(), ///Input Clientes
                                   widgetDataCompleta(), ///Input Data Completa
                                   widgetObservacao(), ///Input Observação
                                   widgetFinalizado(setState) ///Check Finalizado
-
                                 ],
                               ),
                             ),

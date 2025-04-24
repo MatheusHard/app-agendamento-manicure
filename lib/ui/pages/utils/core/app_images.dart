@@ -18,6 +18,6 @@ class AppImages {
   static String get no_image => "assets/images/no_image.png";
   static String get zap => "assets/images/whatsapp.png";
   static String get phone => "assets/images/phonecall.png";
-  static String get semfoto => "semfoto.png";
+  static String get semfoto => "assets/images/semfoto.png";
 
 }
